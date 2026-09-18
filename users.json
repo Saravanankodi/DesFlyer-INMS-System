@@ -1,4 +1,4 @@
-gi[
+[
   {
     "id": "admin01",
     "username": "desflyer",
@@ -9,7 +9,7 @@ gi[
   {
     "id": "mentor01",
     "username": "atchayasri",
-    "password": "pbkdf2_sha256$e34f2becb2895bf44295c32d1862879c$1d1eec90b781c12604c0137573a5eb0aa5b65dbe7e4a0087ec9e1387b4041ebb",
+    "password": "pbkdf2_sha256$e34f0becb2895bf44295c32d1862879c$1d1eec90b781c12604c0137573a5eb0aa5b65dbe7e4a0087ec9e1387b4041ebb",
     "role": "mentor",
     "email": "atchayasri@gmail.com",
     "mentor_id": "31bd4fb72a"

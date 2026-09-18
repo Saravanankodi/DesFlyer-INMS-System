@@ -126,18 +126,29 @@ def navigation_data():
 def login():
     if login_required():
         return redirect(url_for("home"))
+
     if request.method == "POST":
         identifier = request.form.get("username_or_email", "").strip()
         password = request.form.get("password", "")
         selected_role = request.form.get("role", "").strip().casefold()
+
         users = load_json(USERS_FILE)
         user = find_user(identifier, users)
+       
+        user = find_user(identifier, users)
+
         if user and user.get("role", "").casefold() == selected_role and check_password(user.get("password", ""), password):
-            session.clear()
-            session["user"] = {k: user[k] for k in ("id", "username", "email", "role", "mentor_id", "intern_id") if k in user}
-            flash(f"Welcome, {user.get('username', identifier)}!", "success")
-            return redirect(url_for("home"))
+                session.clear()
+                session["user"] = {
+                    k: user[k]
+                    for k in ("id", "username", "email", "role", "mentor_id", "intern_id")
+                    if k in user
+                }
+                flash(f"Welcome, {user.get('username', identifier)}!", "success")
+                return redirect(url_for("home"))
+
         flash("Invalid login details or selected role.", "danger")
+
     return render_template("login.html")
 
 

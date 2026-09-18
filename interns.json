@@ -17,15 +17,6 @@
     "joining_date": "2026-09-15"
   },
   {
-    "id": "103",
-    "name": "Balaji",
-    "email": "balajikavitha@gmailcom",
-    "phone": "9789030392",
-    "department": "Maths",
-    "joining_date": "2026-09-17",
-    "assigned_mentor": "31bd4fb72a"
-  },
-  {
     "id": "104",
     "name": "subash",
     "email": "subash@gmail.com",

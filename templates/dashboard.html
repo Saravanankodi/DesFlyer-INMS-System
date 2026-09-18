@@ -11,7 +11,9 @@
             href="{{ url_for('assign_task') }}"><i class="bi bi-plus-lg"></i> Assign task</a></div>
 </div>
 <div class="row g-3 mb-4">{% for label, value, icon, tone in [('Total interns', total_interns, 'people-fill', 'blue'),
-    ('Total tasks', total_tasks, 'list-check', 'violet'), ('Completed', completed, 'check-circle-fill', 'green'),
+    ('Active interns', active_interns, 'person-check-fill', 'green'), ('Past employees', past_employees, 'person-x-fill', 'red'),
+    ('Departments', total_departments, 'building-fill', 'cyan'), ('Total tasks', total_tasks, 'list-check', 'violet'),
+    ('Completed', completed, 'check-circle-fill', 'green'),
     ('Pending', pending, 'hourglass-split', 'amber'), ('In progress', in_progress, 'arrow-repeat', 'cyan'), ('Overdue',
     overdue, 'exclamation-triangle-fill', 'red')] %}<div class="col-6 col-xl-2">
         <div class="metric-card">

@@ -10,12 +10,22 @@
 <form method="post" class="card form-card">
 	<div class="card-body p-4 p-lg-5">
 		<div class="row g-4">
-			<div class="col-md-6"><label class="form-label">Select Intern</label><select class="form-select"
-					name="intern_id" required>
+			<div class="col-md-4"><label class="form-label">Task Type</label><select class="form-select" id="taskType"
+					name="task_type" required>
+					<option value="Individual Work" {{ 'selected' if not task or task.task_type == 'Individual Work' else '' }}>Individual Work</option>
+					<option value="Team Work" {{ 'selected' if task and task.task_type == 'Team Work' else '' }}>Team Work</option>
+				</select></div>
+			<div class="col-md-8" id="individualPicker"><label class="form-label">Select Intern</label><select class="form-select"
+					name="intern_id" id="individualIntern">
 					<option value="">Choose an intern</option>{% for intern in interns %}<option value="{{ intern.id }}"
 						{{ 'selected' if task and task.intern_id==intern.id else '' }}>{{ intern.name }} · {{ intern.id
 						}}</option>{% endfor %}
 				</select></div>
+			<div class="col-md-8 d-none" id="teamPicker"><label class="form-label">Team members</label>
+				<button type="button" class="form-select text-start" data-bs-toggle="modal" data-bs-target="#teamMemberModal" id="teamMemberButton">Choose team members</button>
+				<div class="form-text" id="selectedTeamNames">No team members selected.</div>
+				{% if task %}{% for intern_id in task.assigned_intern_ids %}<input type="hidden" name="selected_intern_ids" value="{{ intern_id }}">{% endfor %}{% endif %}
+			</div>
 			<div class="col-md-6"><label class="form-label">Task Title</label><input class="form-control" name="title"
 					value="{{ task.title if task else '' }}" required></div>
 			<div class="col-12"><label class="form-label">Task Description</label><textarea class="form-control"
@@ -34,4 +44,43 @@
 					class="bi bi-check2-circle"></i> {{ 'Save changes' if task else 'Assign task' }}</button></div>
 	</div>
 </form>
+<div class="modal fade" id="teamMemberModal" tabindex="-1" aria-labelledby="teamMemberModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+		<div class="modal-header"><h5 class="modal-title" id="teamMemberModalLabel">Select active team members</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+		<div class="modal-body"><input type="search" class="form-control mb-3" id="teamMemberSearch" placeholder="Search interns by ID or name" autocomplete="off">
+			<div class="d-flex gap-2 mb-3"><button type="button" class="btn btn-sm btn-outline-primary" id="selectAllMembers">Select All</button><button type="button" class="btn btn-sm btn-outline-secondary" id="clearMembers">Clear Selection</button></div>
+			<div id="teamMemberOptions" class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th scope="col" style="width:50px"></th><th scope="col">Intern ID</th><th scope="col">Intern Name</th></tr></thead><tbody>{% for intern in interns %}<tr class="team-member-option" data-search="{{ intern.id }} {{ intern.name }}"><td><input class="team-member-checkbox" type="checkbox" value="{{ intern.id }}" data-name="{{ intern.name }}" aria-label="Select {{ intern.name }}" {{ 'checked' if task and intern.id in task.assigned_intern_ids else '' }}></td><td>{{ intern.id }}</td><td>{{ intern.name }}</td></tr>{% endfor %}</tbody></table></div>
+		</div><div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="applyTeamMembers">Use selected members</button></div>
+	</div></div>
+</div>
+<script>
+	const taskType = document.getElementById('taskType');
+	const individualPicker = document.getElementById('individualPicker');
+	const teamPicker = document.getElementById('teamPicker');
+	const individualIntern = document.getElementById('individualIntern');
+	const teamButton = document.getElementById('teamMemberButton');
+	const selectedTeamNames = document.getElementById('selectedTeamNames');
+	const checkboxes = [...document.querySelectorAll('.team-member-checkbox')];
+	function syncTaskType() {
+		const team = taskType.value === 'Team Work';
+		individualPicker.classList.toggle('d-none', team);
+		teamPicker.classList.toggle('d-none', !team);
+		individualIntern.disabled = team;
+	}
+	function syncTeamMembers() {
+		const selected = checkboxes.filter((box) => box.checked);
+		document.querySelectorAll('input[name="selected_intern_ids"]').forEach((input) => input.remove());
+		selected.forEach((box) => { const input = document.createElement('input'); input.type = 'hidden'; input.name = 'selected_intern_ids'; input.value = box.value; document.querySelector('form').appendChild(input); });
+		const names = selected.map((box) => box.dataset.name);
+		selectedTeamNames.textContent = names.length ? names.join(', ') : 'No team members selected.';
+		teamButton.textContent = names.length ? `${names.length} member(s) selected` : 'Choose team members';
+	}
+	taskType.addEventListener('change', syncTaskType);
+	document.getElementById('applyTeamMembers').addEventListener('click', syncTeamMembers);
+	document.getElementById('selectAllMembers').addEventListener('click', () => { checkboxes.forEach((box) => { if (!box.closest('.team-member-option').classList.contains('d-none')) box.checked = true; }); syncTeamMembers(); });
+	document.getElementById('clearMembers').addEventListener('click', () => { checkboxes.forEach((box) => { box.checked = false; }); syncTeamMembers(); });
+	document.getElementById('teamMemberSearch').addEventListener('input', (event) => { const query = event.target.value.toLowerCase(); document.querySelectorAll('.team-member-option').forEach((item) => item.classList.toggle('d-none', !item.dataset.search.toLowerCase().includes(query))); });
+	syncTeamMembers();
+	syncTaskType();
+</script>
 {% endblock %}

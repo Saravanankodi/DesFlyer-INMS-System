@@ -13,9 +13,13 @@
         <table class="table align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Intern</th>
+                    <th>Intern ID</th>
+                    <th>Intern Name</th>
                     <th>Department</th>
                     <th>Mentor</th>
+                    <th>Duration</th>
+                    <th>End date</th>
+                    <th>Status</th>
                     <th>Contact</th>
                     <th>Tasks</th>
                     <th style="min-width:180px">Progress</th>
@@ -24,10 +28,13 @@
             </thead>
             <tbody>
                 {% for intern in interns %}<tr>
-                    <td><strong>{{ intern.name }}</strong><small class="d-block text-muted">ID: {{ intern.id }}</small>
-                    </td>
+                    <td>{{ intern.id }}</td>
+                    <td><strong>{{ intern.name }}</strong></td>
                     <td><span class="badge badge-soft">{{ intern.department }}</span></td>
                     <td><i class="bi bi-person-badge text-muted"></i> {{ intern.mentor_name }}</td>
+                    <td>{{ intern.duration_months }} months</td>
+                    <td>{{ intern.end_date or 'Not set' }}</td>
+                    <td><span class="badge {{ 'status-active' if intern.employment_status == 'Active Intern' else 'status-past' }}">{{ intern.employment_status }}</span></td>
                     <td>{{ intern.email }}<small class="d-block text-muted">{{ intern.phone }}</small></td>
                     <td>{{ intern.total_tasks }} total <small class="d-block text-muted">{{ intern.completed_tasks }}
                             complete · {{ intern.pending_tasks }} pending</small></td>
@@ -48,7 +55,7 @@
                     </td>
                 </tr>
                 {% else %}<tr>
-                    <td colspan="7" class="empty-state">No interns yet. Add your first intern to get started.</td>
+                    <td colspan="11" class="empty-state">No interns yet. Add your first intern to get started.</td>
                 </tr>{% endfor %}</tbody>
         </table>
     </div>

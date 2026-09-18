@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Interns{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div><span class="eyebrow">People directory</span>
+        <h1>Interns</h1>
+        <p class="text-muted">Track every intern's workload and progress in one place.</p>
+    </div><a class="btn btn-primary" href="{{ url_for('add_intern') }}"><i class="bi bi-person-plus-fill"></i> Add
+        intern</a>
+</div>
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Intern</th>
+                    <th>Department</th>
+                    <th>Mentor</th>
+                    <th>Contact</th>
+                    <th>Tasks</th>
+                    <th style="min-width:180px">Progress</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for intern in interns %}<tr>
+                    <td><strong>{{ intern.name }}</strong><small class="d-block text-muted">ID: {{ intern.id }}</small>
+                    </td>
+                    <td><span class="badge badge-soft">{{ intern.department }}</span></td>
+                    <td><i class="bi bi-person-badge text-muted"></i> {{ intern.mentor_name }}</td>
+                    <td>{{ intern.email }}<small class="d-block text-muted">{{ intern.phone }}</small></td>
+                    <td>{{ intern.total_tasks }} total <small class="d-block text-muted">{{ intern.completed_tasks }}
+                            complete · {{ intern.pending_tasks }} pending</small></td>
+                    <td>
+                        <div class="d-flex justify-content-between small mb-1"><span>{{ intern.progress }}%</span><span
+                                class="text-muted">{{ intern.completed_tasks }}/{{ intern.total_tasks }}</span></div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width:{{ intern.progress }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-end text-nowrap"><a class="btn btn-sm btn-light" title="Edit intern"
+                            href="{{ url_for('edit_intern', intern_id=intern.id) }}"><i class="bi bi-pencil"></i></a>
+                        <form class="d-inline" method="post"
+                            action="{{ url_for('delete_intern', intern_id=intern.id) }}"
+                            onsubmit="return confirm('Delete this intern and their tasks?')"><button
+                                class="btn btn-sm btn-light text-danger" title="Delete intern"><i
+                                    class="bi bi-trash3"></i></button></form>
+                    </td>
+                </tr>
+                {% else %}<tr>
+                    <td colspan="7" class="empty-state">No interns yet. Add your first intern to get started.</td>
+                </tr>{% endfor %}</tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

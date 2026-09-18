@@ -1,11 +1,16 @@
 import json
+from io import BytesIO
 from datetime import date
 from pathlib import Path
 from uuid import uuid4
+from xml.sax.saxutils import escape
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, send_file, session, url_for
 import hashlib
 import secrets
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 app = Flask(__name__)
 app.secret_key = "internship-tracker-development-key-change-me"
@@ -47,7 +52,7 @@ def is_overdue(task):
 
 def intern_summary(intern, tasks):
     assigned = [{**task, "overdue": is_overdue(task)} for task in tasks
-                if task.get("intern_id") == intern["id"]]
+                if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])]
     completed = sum(task.get("status") == "Completed" for task in assigned)
     return {**intern, "tasks": assigned, "total_tasks": len(assigned),
             "completed_tasks": completed,
@@ -58,8 +63,16 @@ def intern_summary(intern, tasks):
 
 def decorate_tasks(tasks, interns):
     names = {intern["id"]: intern["name"] for intern in interns}
-    return [{**task, "intern_name": names.get(task.get("intern_id"), "Unknown intern"),
-             "overdue": is_overdue(task)} for task in tasks]
+    decorated = []
+    for task in tasks:
+        assigned_ids = task.get("assigned_intern_ids") or [task.get("intern_id")]
+        assigned_names = task.get("assigned_names") or [names.get(task.get("intern_id"), "Unknown intern")]
+        decorated.append({**task, "task_type": task.get("task_type", "Individual Work"),
+                          "assigned_intern_ids": assigned_ids,
+                          "assigned_names": assigned_names,
+                          "intern_name": ", ".join(assigned_names),
+                          "overdue": is_overdue(task)})
+    return decorated
 
 
 def check_password(stored, password):
@@ -421,8 +434,35 @@ def view_tasks():
     interns, tasks, _ = get_data()
     if role_required("mentor"):
         ids = mentor_intern_ids(current_user(), interns)
-        tasks = [t for t in tasks if t.get("intern_id") in ids]
+        tasks = [t for t in tasks if ids.intersection(
+            t.get("assigned_intern_ids", [t.get("intern_id")]))]
     return render_template("tasks.html", tasks=decorate_tasks(tasks, interns))
+
+
+@app.get("/tasks/<task_id>")
+def view_task(task_id):
+    if not role_required("admin", "mentor"):
+        flash("Only admins and mentors can view task details.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, mentors = get_data()
+    task = next((item for item in tasks if item.get("id") == task_id), None)
+    if task is None:
+        flash("Task not found.", "danger")
+        return redirect(url_for("view_tasks"))
+    if role_required("mentor") and not mentor_intern_ids(current_user(), interns).intersection(
+            task.get("assigned_intern_ids", [task.get("intern_id")])):
+        flash("You cannot view this task.", "danger")
+        return redirect(url_for("view_tasks"))
+    intern_by_id = {item.get("id"): item for item in interns}
+    mentor_names = {mentor["id"]: mentor["name"] for mentor in mentors}
+    assigned_interns = []
+    for intern_id in task.get("assigned_intern_ids", [task.get("intern_id")]):
+        intern = intern_by_id.get(intern_id)
+        if intern:
+            assigned_interns.append({**intern, "mentor_name": mentor_names.get(
+                intern.get("assigned_mentor"), "Unassigned")})
+    return render_template("task_detail.html", task=decorate_tasks([task], interns)[0],
+                           assigned_interns=assigned_interns)
 
 
 @app.route("/tasks/add", methods=["GET", "POST"])
@@ -435,23 +475,36 @@ def assign_task():
         ids = mentor_intern_ids(current_user(), interns)
         interns = [i for i in interns if i.get("id") in ids]
     if request.method == "POST":
-        task = {"id": uuid4().hex[:10], "intern_id": request.form.get("intern_id", ""),
+        task_type = request.form.get("task_type", "Individual Work").strip()
+        selected_ids = [item.strip() for item in request.form.getlist("selected_intern_ids") if item.strip()]
+        intern_id = request.form.get("intern_id", "").strip()
+        if task_type == "Individual Work":
+            selected_ids = [intern_id]
+        task = {"id": uuid4().hex[:10], "intern_id": selected_ids[0] if selected_ids else "",
+                "task_type": task_type,
                 "title": request.form.get("title", "").strip(),
                 "description": request.form.get("description", "").strip(),
                 "deadline": request.form.get("deadline", ""),
                 "priority": request.form.get("priority", "Medium"),
                 "status": request.form.get("status", "Pending")}
         valid_ids = {item.get("id") for item in interns}
-        if not task["intern_id"] or not task["title"] or not task["deadline"]:
-            flash("Intern, title, and deadline are required.", "danger")
-        elif task["intern_id"] not in valid_ids:
+        if task_type not in ("Individual Work", "Team Work"):
+            flash("Select a valid task type.", "danger")
+        elif not selected_ids or not task["title"] or not task["deadline"]:
+            flash("Select at least one intern, then provide a title and deadline.", "danger")
+        elif any(item not in valid_ids for item in selected_ids):
             flash("You cannot assign a task to that intern.", "danger")
+        elif task_type == "Individual Work" and len(selected_ids) != 1:
+            flash("Individual Work must have exactly one intern selected.", "danger")
         else:
+            task["assigned_intern_ids"] = selected_ids
+            task["assigned_names"] = [next(item["name"] for item in interns if item["id"] == item_id)
+                                       for item_id in selected_ids]
             tasks.append(task)
             save_json(TASKS_FILE, tasks)
             flash("Task assigned successfully.", "success")
             return redirect(url_for("view_tasks"))
-    return render_template("assign_task.html", interns=interns, task=None,
+    return render_template("assign_task.html", interns=interns, departments=sorted({item.get("department") for item in interns if item.get("department")}), task=None,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -465,22 +518,36 @@ def edit_task(task_id):
     if task is None:
         flash("Task not found.", "danger")
         return redirect(url_for("view_tasks"))
-    if role_required("mentor") and task.get("intern_id") not in mentor_intern_ids(current_user(), all_interns):
+    if role_required("mentor") and not mentor_intern_ids(current_user(), all_interns).intersection(
+            task.get("assigned_intern_ids", [task.get("intern_id")])):
         flash("You cannot edit this task.", "danger")
         return redirect(url_for("view_tasks"))
     interns = all_interns
     if role_required("mentor"):
         interns = [i for i in all_interns if i.get("id") in mentor_intern_ids(current_user(), all_interns)]
+    active_interns = interns
     if request.method == "POST":
+        task_type = request.form.get("task_type", "Individual Work").strip()
+        selected_ids = [item.strip() for item in request.form.getlist("selected_intern_ids") if item.strip()]
+        if task_type == "Individual Work":
+            selected_ids = [request.form.get("intern_id", "").strip()]
         for field in ("intern_id", "title", "description", "deadline", "priority", "status"):
-            task[field] = request.form.get(field, "").strip()
-        if task.get("intern_id") not in {i.get("id") for i in interns}:
+            if field != "intern_id":
+                task[field] = request.form.get(field, "").strip()
+        if task_type not in ("Individual Work", "Team Work") or not selected_ids or any(item not in {i.get("id") for i in active_interns} for item in selected_ids):
             flash("You cannot assign this task to that intern.", "danger")
+        elif task_type == "Individual Work" and len(selected_ids) != 1:
+            flash("Individual Work must have exactly one intern selected.", "danger")
         else:
+            task["task_type"] = task_type
+            task["intern_id"] = selected_ids[0]
+            task["assigned_intern_ids"] = selected_ids
+            task["assigned_names"] = [next(item["name"] for item in active_interns if item["id"] == item_id)
+                                       for item_id in selected_ids]
             save_json(TASKS_FILE, tasks)
             flash("Task details updated.", "success")
             return redirect(url_for("view_tasks"))
-    return render_template("assign_task.html", interns=interns, task=task,
+    return render_template("assign_task.html", interns=active_interns, departments=sorted({item.get("department") for item in active_interns if item.get("department")}), task=task,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -535,6 +602,47 @@ def reports():
         ids = mentor_intern_ids(current_user(), interns)
         enriched = [i for i in enriched if i.get("id") in ids]
     return render_template("report.html", interns=[intern_summary(i, tasks) for i in enriched])
+
+
+@app.get("/download-report")
+def download_report():
+    if not role_required("admin", "mentor"):
+        flash("Only admins and mentors can download reports.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, mentors = get_data()
+    mentor_names = {mentor["id"]: mentor["name"] for mentor in mentors}
+    if role_required("mentor"):
+        ids = mentor_intern_ids(current_user(), interns)
+        interns = [intern for intern in interns if intern.get("id") in ids]
+    enriched = [{**intern, "mentor_name": mentor_names.get(intern.get("assigned_mentor"), "Unassigned")}
+                for intern in interns]
+    report_rows = [intern_summary(intern, tasks) for intern in enriched]
+    buffer = BytesIO()
+    document = SimpleDocTemplate(buffer, pagesize=A4, title="Progress Reports")
+    styles = getSampleStyleSheet()
+    story = [Paragraph("Progress Reports", styles["Title"])]
+    for intern in report_rows:
+        story.extend([
+            Paragraph(escape(intern.get("name", "")), styles["Heading2"]),
+            Paragraph(escape(f'{intern.get("department", "")} · {intern.get("email", "")} · ID {intern.get("id", "")}'), styles["BodyText"]),
+            Paragraph(escape(f'Mentor: {intern.get("mentor_name", "Unassigned")}'), styles["BodyText"]),
+            Paragraph(escape(f'Progress: {intern.get("progress", 0)}%'), styles["BodyText"]),
+            Spacer(1, 6),
+        ])
+        rows = [["Assigned task", "Deadline", "Status"]]
+        for task in intern.get("tasks", []):
+            rows.append([Paragraph(escape(task.get("title", "")), styles["BodyText"]),
+                         task.get("deadline", ""), task.get("status", "")])
+        if len(rows) == 1:
+            rows.append(["No tasks assigned.", "", ""])
+        table = Table(rows, colWidths=[110, 100, 100], repeatRows=1)
+        table.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, "#cccccc"),
+                                   ("BACKGROUND", (0, 0), (-1, 0), "#eef2f5")]))
+        story.append(table)
+    document.build(story)
+    buffer.seek(0)
+    return send_file(buffer, mimetype="application/pdf", as_attachment=True,
+                     download_name="progress-reports.pdf")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import calendar
 import json
 from io import BytesIO
 from datetime import date
@@ -24,6 +25,19 @@ STATUSES = ("Pending", "In Progress", "Completed")
 PRIORITIES = ("High", "Medium", "Low")
 
 
+def calculate_end_date(joining_date, duration_months):
+    joining = date.fromisoformat(joining_date)
+    month_index = joining.month - 1 + int(duration_months)
+    year = joining.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(joining.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day).isoformat()
+
+
+def calculate_intern_status(end_date):
+    return "Active Intern" if date.today().isoformat() <= end_date else "Past Employee"
+
+
 def load_json(path):
     if not path.exists():
         path.write_text("[]", encoding="utf-8")
@@ -40,7 +54,20 @@ def save_json(path, value):
 
 
 def get_data():
-    return load_json(INTERNS_FILE), load_json(TASKS_FILE), load_json(MENTORS_FILE)
+    interns = load_json(INTERNS_FILE)
+    changed = False
+    for intern in interns:
+        duration = intern.get("duration_months")
+        if duration:
+            try:
+                intern["end_date"] = calculate_end_date(intern["joining_date"], int(duration))
+                intern["employment_status"] = calculate_intern_status(intern["end_date"])
+                changed = True
+            except (KeyError, TypeError, ValueError):
+                pass
+    if changed:
+        save_json(INTERNS_FILE, interns)
+    return interns, load_json(TASKS_FILE), load_json(MENTORS_FILE)
 
 
 def is_overdue(task):
@@ -301,11 +328,16 @@ def dashboard():
     pending = sum(task.get("status") == "Pending" for task in tasks)
     in_progress = sum(task.get("status") == "In Progress" for task in tasks)
     overdue = sum(is_overdue(task) for task in tasks)
+    active_interns = sum(intern.get("employment_status") == "Active Intern" for intern in interns)
+    past_employees = sum(intern.get("employment_status") == "Past Employee" for intern in interns)
+    total_departments = len({intern.get("department") for intern in interns if intern.get("department")})
     return render_template("dashboard.html", interns=[intern_summary(i, tasks) for i in interns],
                            tasks=decorate_tasks(tasks, interns), total_interns=len(interns),
                            mentors=mentors, total_mentors=len(mentors), total_tasks=len(tasks),
                            completed=completed, pending=pending, in_progress=in_progress,
-                           overdue=overdue, progress=round(completed / len(tasks) * 100, 1) if tasks else 0)
+                           overdue=overdue, active_interns=active_interns,
+                           past_employees=past_employees, total_departments=total_departments,
+                           progress=round(completed / len(tasks) * 100, 1) if tasks else 0)
 
 
 @app.route("/mentor/dashboard")
@@ -362,13 +394,23 @@ def add_intern():
     interns, _, mentors = get_data()
     if request.method == "POST":
         intern = {field: request.form.get(field, "").strip() for field in
-                  ("id", "name", "email", "phone", "department", "joining_date")}
+                  ("id", "name", "email", "phone", "department", "joining_date", "duration_months")}
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
-        if not all(intern.values()):
+        try:
+            duration_months = int(intern["duration_months"])
+            end_date = calculate_end_date(intern["joining_date"], duration_months)
+        except (TypeError, ValueError):
+            duration_months = 0
+            end_date = ""
+        if not all(intern[field] for field in
+                   ("id", "name", "email", "phone", "department", "joining_date")) or duration_months <= 0:
             flash("Please complete every intern field.", "danger")
         elif any(item.get("id") == intern["id"] for item in interns):
             flash("That Intern ID is already in use.", "danger")
         else:
+            intern["duration_months"] = duration_months
+            intern["end_date"] = end_date
+            intern["employment_status"] = calculate_intern_status(end_date)
             interns.append(intern)
             save_json(INTERNS_FILE, interns)
             flash("Intern added successfully.", "success")
@@ -407,6 +449,18 @@ def edit_intern(intern_id):
     if request.method == "POST":
         for field in ("name", "email", "phone", "department", "joining_date"):
             intern[field] = request.form.get(field, "").strip()
+        try:
+            duration_months = int(request.form.get("duration_months", "0"))
+            end_date = calculate_end_date(intern["joining_date"], duration_months)
+        except (TypeError, ValueError):
+            flash("Enter a valid internship duration and joining date.", "danger")
+            return render_template("add_intern.html", intern=intern, mentors=mentors)
+        if duration_months <= 0:
+            flash("Internship duration must be greater than zero.", "danger")
+            return render_template("add_intern.html", intern=intern, mentors=mentors)
+        intern["duration_months"] = duration_months
+        intern["end_date"] = end_date
+        intern["employment_status"] = calculate_intern_status(end_date)
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
         save_json(INTERNS_FILE, interns)
         flash("Intern details updated.", "success")

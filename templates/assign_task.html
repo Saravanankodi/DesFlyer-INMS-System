@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Task' if task else 'Assign Task' }}{% endblock %}
+{% block content %}
+<div class="page-heading">
+	<div><span class="eyebrow">Work allocation</span>
+		<h1>{{ 'Edit task details' if task else 'Assign a task' }}</h1>
+	</div><a class="btn btn-outline-secondary" href="{{ url_for('view_tasks') }}"><i class="bi bi-arrow-left"></i> Back
+		to tasks</a>
+</div>
+<form method="post" class="card form-card">
+	<div class="card-body p-4 p-lg-5">
+		<div class="row g-4">
+			<div class="col-md-6"><label class="form-label">Select Intern</label><select class="form-select"
+					name="intern_id" required>
+					<option value="">Choose an intern</option>{% for intern in interns %}<option value="{{ intern.id }}"
+						{{ 'selected' if task and task.intern_id==intern.id else '' }}>{{ intern.name }} · {{ intern.id
+						}}</option>{% endfor %}
+				</select></div>
+			<div class="col-md-6"><label class="form-label">Task Title</label><input class="form-control" name="title"
+					value="{{ task.title if task else '' }}" required></div>
+			<div class="col-12"><label class="form-label">Task Description</label><textarea class="form-control"
+					name="description" rows="4"
+					placeholder="What needs to be delivered?">{{ task.description if task else '' }}</textarea></div>
+			<div class="col-md-4"><label class="form-label">Deadline</label><input class="form-control" type="date"
+					name="deadline" value="{{ task.deadline if task else '' }}" required></div>
+			<div class="col-md-4"><label class="form-label">Priority</label><select class="form-select"
+					name="priority">{% for priority in priorities %}<option {{ 'selected' if task and
+						task.priority==priority else '' }}>{{ priority }}</option>{% endfor %}</select></div>
+			<div class="col-md-4"><label class="form-label">Status</label><select class="form-select" name="status">{%
+					for status in statuses %}<option {{ 'selected' if task and task.status==status else '' }}>{{ status
+						}}</option>{% endfor %}</select></div>
+		</div>
+		<div class="mt-5 d-flex justify-content-end"><button class="btn btn-primary px-4" type="submit"><i
+					class="bi bi-check2-circle"></i> {{ 'Save changes' if task else 'Assign task' }}</button></div>
+	</div>
+</form>
+{% endblock %}

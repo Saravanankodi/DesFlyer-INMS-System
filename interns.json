@@ -1,0 +1,28 @@
+[
+  {
+    "id": "101",
+    "name": "Gayathri B",
+    "email": "gayathiribkpg@gmail.com",
+    "phone": "6382986610",
+    "department": "Data science",
+    "joining_date": "2026-09-07",
+    "assigned_mentor": "31bd4fb72a"
+  },
+  {
+    "id": "102",
+    "name": "Pavithra B",
+    "email": "pavigayu12@gmail.com",
+    "phone": "8778818510",
+    "department": "Computer Science",
+    "joining_date": "2026-09-15"
+  },
+  {
+    "id": "103",
+    "name": "Balaji",
+    "email": "balajikavitha@gmailcom",
+    "phone": "9789030392",
+    "department": "Maths",
+    "joining_date": "2026-09-17",
+    "assigned_mentor": "31bd4fb72a"
+  }
+]

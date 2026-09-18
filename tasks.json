@@ -1,0 +1,29 @@
+[
+  {
+    "id": "bac0f25b3c",
+    "intern_id": "101",
+    "title": "python project",
+    "description": "SIP provider is not required for the initial local testing. We can use Asterisk with local SIP extensions/softphones for testing. If we need to make real phone calls, we can choose a SIP provider later.",
+    "deadline": "2026-09-16",
+    "priority": "High",
+    "status": "In Progress"
+  },
+  {
+    "id": "85e5525545",
+    "intern_id": "102",
+    "title": "Automatic_call",
+    "description": "the mail is recive means automatic will be conduct",
+    "deadline": "2026-09-17",
+    "priority": "Medium",
+    "status": "Completed"
+  },
+  {
+    "id": "38255aecc3",
+    "intern_id": "101",
+    "title": "student management",
+    "description": "create a student management",
+    "deadline": "2026-09-17",
+    "priority": "High",
+    "status": "Completed"
+  }
+]

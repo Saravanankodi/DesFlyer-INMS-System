@@ -45,7 +45,13 @@ DEFAULT_DEPARTMENTS = (
     "Sales Department",
     "Finance Department",
 )
-app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # Allow large internship project ZIP uploads (up to 500 MB)
+
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    flash("The uploaded ZIP is too large. The maximum allowed size is 500 MB.", "danger")
+    return redirect(url_for("intern_dashboard"))
 
 
 def calculate_end_date(joining_date, duration_months):
@@ -141,7 +147,25 @@ def get_data():
                 pass
     if changed:
         save_json(INTERNS_FILE, interns)
-    return interns, load_json(TASKS_FILE), load_json(MENTORS_FILE)
+    tasks = load_json(TASKS_FILE)
+    tasks_changed = False
+    for task in tasks:
+        legacy_status = normalize_task_status(task.get("status", "Start"))
+        if "intern_status" not in task:
+            task["intern_status"] = legacy_status
+            tasks_changed = True
+        if "mentor_status" not in task:
+            task["mentor_status"] = legacy_status
+            tasks_changed = True
+        if "mentor_pending_status" not in task:
+            task["mentor_pending_status"] = None
+            tasks_changed = True
+        if "mentor_pending" not in task:
+            task["mentor_pending"] = False
+            tasks_changed = True
+    if tasks_changed:
+        save_json(TASKS_FILE, tasks)
+    return interns, tasks, load_json(MENTORS_FILE)
 
 
 def normalize_task_status(value):
@@ -160,6 +184,14 @@ def normalize_task_status(value):
     return status if status in STATUSES else "Start"
 
 
+def task_status_for_role(task, role):
+    if role == "intern":
+        return normalize_task_status(task.get("intern_status", task.get("status", "Start")))
+    if role == "mentor" and task.get("mentor_pending"):
+        return normalize_task_status(task.get("mentor_pending_status", task.get("status", "Start")))
+    return normalize_task_status(task.get("status", "Start"))
+
+
 def is_overdue(task):
     try:
         return normalize_task_status(task.get("status")) != "Completed" and date.fromisoformat(task["deadline"]) < date.today()
@@ -167,13 +199,14 @@ def is_overdue(task):
         return False
 
 
-def intern_summary(intern, tasks):
-    assigned = [{**task, "overdue": is_overdue(task)} for task in tasks
+def intern_summary(intern, tasks, role="admin"):
+    assigned = [{**task, "overdue": is_overdue(task),
+                 "view_status": task_status_for_role(task, role)} for task in tasks
                 if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])]
-    completed = sum(normalize_task_status(task.get("status")) == "Completed" for task in assigned)
-    start_tasks = sum(normalize_task_status(task.get("status")) == "Start" for task in assigned)
-    not_completed_tasks = sum(normalize_task_status(task.get("status")) == "Not Completed" for task in assigned)
-    completed_items = [task for task in assigned if normalize_task_status(task.get("status")) == "Completed"]
+    completed = sum(task["view_status"] == "Completed" for task in assigned)
+    start_tasks = sum(task["view_status"] == "Start" for task in assigned)
+    not_completed_tasks = sum(task["view_status"] == "Not Completed" for task in assigned)
+    completed_items = [task for task in assigned if task["view_status"] == "Completed"]
     latest_completed = max(
         completed_items,
         key=lambda task: task.get("completed_at") or task.get("deadline") or "",
@@ -184,7 +217,7 @@ def intern_summary(intern, tasks):
             "start_tasks": start_tasks,
             "pending_tasks": start_tasks,
             "not_completed_tasks": not_completed_tasks,
-            "in_progress_tasks": sum(normalize_task_status(task.get("status")) == "In Progress" for task in assigned),
+            "in_progress_tasks": sum(task["view_status"] == "In Progress" for task in assigned),
             "latest_completed_task": latest_completed.get("title") if latest_completed else "No completed task yet",
             "latest_completed_at": (latest_completed.get("completed_at") or latest_completed.get("deadline") or "") if latest_completed else "",
             "progress": round(completed / len(assigned) * 100, 1) if assigned else 0}
@@ -201,7 +234,10 @@ def decorate_tasks(tasks, interns):
                           "assigned_names": assigned_names,
                           "intern_name": ", ".join(assigned_names),
                           "department": task_department(task, interns),
-                          "overdue": is_overdue(task)})
+                          "overdue": is_overdue(task),
+                          "view_status": task_status_for_role(task, current_user().get("role") if current_user() else "admin"),
+                          "mentor_pending": bool(task.get("mentor_pending")),
+                          "pending_status": task.get("mentor_pending_status")})
     return decorated
 
 
@@ -456,7 +492,7 @@ def mentor_dashboard():
         return redirect(url_for("home"))
     interns, tasks, _ = get_data()
     ids = mentor_intern_ids(current_user(), interns)
-    my_interns = [intern_summary(i, tasks) for i in interns if i.get("id") in ids]
+    my_interns = [intern_summary(i, tasks, role="mentor") for i in interns if i.get("id") in ids]
     my_tasks = [t for t in tasks if ids.intersection(t.get("assigned_intern_ids", [t.get("intern_id")]))]
     completed = sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks)
     return render_template("mentor_dashboard.html", interns=my_interns,
@@ -475,7 +511,7 @@ def intern_dashboard():
         session.clear()
         flash("Your intern profile could not be found.", "danger")
         return redirect(url_for("login"))
-    summary = intern_summary(intern, tasks)
+    summary = intern_summary(intern, tasks, role="intern")
     mentor = next((m for m in mentors if m.get("id") == intern.get("assigned_mentor")), None)
     return render_template("intern_dashboard.html", intern=summary, mentor=mentor)
 
@@ -713,18 +749,21 @@ def view_tasks():
 
 @app.get("/tasks/<task_id>")
 def view_task(task_id):
-    if not role_required("admin", "mentor"):
-        flash("Only admins and mentors can view task details.", "danger")
+    if not login_required():
         return redirect(url_for("home"))
     interns, tasks, mentors = get_data()
     task = next((item for item in tasks if item.get("id") == task_id), None)
     if task is None:
         flash("Task not found.", "danger")
         return redirect(url_for("view_tasks"))
-    if role_required("mentor") and not mentor_intern_ids(current_user(), interns).intersection(
-            task.get("assigned_intern_ids", [task.get("intern_id")])):
+    assigned_ids = task.get("assigned_intern_ids", [task.get("intern_id")])
+    user = current_user()
+    if user.get("role") == "mentor" and not mentor_intern_ids(user, interns).intersection(assigned_ids):
         flash("You cannot view this task.", "danger")
         return redirect(url_for("view_tasks"))
+    if user.get("role") == "intern" and user.get("intern_id") not in assigned_ids:
+        flash("You cannot view this task.", "danger")
+        return redirect(url_for("intern_dashboard"))
     intern_by_id = {item.get("id"): item for item in interns}
     mentor_names = {mentor["id"]: mentor["name"] for mentor in mentors}
     assigned_interns = []
@@ -769,6 +808,10 @@ def assign_task():
                 "deadline": request.form.get("deadline", ""),
                 "priority": request.form.get("priority", "Medium"),
                 "status": normalize_task_status(request.form.get("status", "Start")),
+                "intern_status": normalize_task_status(request.form.get("status", "Start")),
+                "mentor_status": normalize_task_status(request.form.get("status", "Start")),
+                "mentor_pending_status": None,
+                "mentor_pending": False,
                 "created_by_role": current_user().get("role")}
         valid_ids = {item.get("id") for item in interns}
         if not manual_task_id:
@@ -840,7 +883,13 @@ def edit_task(task_id):
         task["description"] = request.form.get("description", "").strip()
         task["deadline"] = request.form.get("deadline", "").strip()
         task["priority"] = request.form.get("priority", "Medium").strip()
-        set_completed_timestamp(task, request.form.get("status", "Start").strip())
+        requested_status = normalize_task_status(request.form.get("status", "Start").strip())
+        if role_required("admin"):
+            set_completed_timestamp(task, requested_status)
+            task["mentor_status"] = requested_status
+        else:
+            task["mentor_status"] = requested_status
+            task["status"] = requested_status
         task["department"] = department
         if role_required("mentor") and (not project_id or not next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)):
             flash("Choose an admin-created project before editing this task.", "danger")
@@ -901,10 +950,43 @@ def update_intern_task_status(task_id):
     if normalized_status not in STATUSES:
         flash("Invalid task status.", "danger")
     else:
-        set_completed_timestamp(task, normalized_status)
+        task["intern_status"] = normalized_status
+        task["mentor_pending_status"] = normalized_status
+        task["mentor_pending"] = True
         save_json(TASKS_FILE, tasks)
-        flash("Task status updated. Your progress has been recalculated.", "success")
+        flash("Status sent to your mentor for confirmation. Admin status will update after mentor confirmation.", "success")
     return redirect(url_for("intern_dashboard"))
+
+
+@app.post("/mentor/tasks/<task_id>/confirm-status")
+def confirm_intern_task_status(task_id):
+    if not role_required("mentor"):
+        flash("Only mentors can confirm intern status updates.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    task = next((t for t in tasks if t.get("id") == task_id), None)
+    if task is None:
+        flash("Task not found.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    assigned = set(task.get("assigned_intern_ids") or [task.get("intern_id")])
+    if not mentor_intern_ids(current_user(), interns).intersection(assigned):
+        flash("You cannot confirm this task.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    if not task.get("mentor_pending"):
+        flash("There is no pending intern status update.", "warning")
+        return redirect(url_for("mentor_dashboard"))
+    confirmed = normalize_task_status(task.get("mentor_pending_status", task.get("intern_status", "Start")))
+    task["mentor_status"] = confirmed
+    task["status"] = confirmed
+    task["mentor_pending"] = False
+    task["mentor_pending_status"] = None
+    if confirmed == "Completed":
+        task["completed_at"] = date.today().isoformat()
+    else:
+        task.pop("completed_at", None)
+    save_json(TASKS_FILE, tasks)
+    flash("Intern status confirmed. The admin view has been updated.", "success")
+    return redirect(url_for("mentor_dashboard"))
 
 
 @app.route("/reports")

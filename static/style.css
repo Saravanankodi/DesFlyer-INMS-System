@@ -72,16 +72,15 @@
 .compact-form-card .form-label{margin-bottom:5px}
 .login-shell{width:min(540px,94vw)}
 .login-card{border-radius:18px}
-.login-title{font-family:'Space Grotesk',sans-serif;font-size:2.15rem;line-height:1.1;letter-spacing:-1px;margin:10px 0 8px}
-.login-subtitle{font-size:1.02rem;color:#596876;margin-bottom:0}
-.login-form{margin-top:22px}
+.login-title{font-family:'Space Grotesk',sans-serif;font-size:2.8rem;line-height:1.05;letter-spacing:-1.2px;margin:12px 0 8px}
+.login-subtitle{font-size:1.08rem;color:#596876;margin-bottom:0}
+.login-form{margin-top:28px}
 .login-label{font-size:.94rem;font-weight:700;color:#17212b}
 .login-input{font-size:1rem!important;padding:15px 16px!important;border-radius:9px}
 .login-role-group span{font-size:.92rem;padding:13px 7px}
 .login-button{margin-top:2px;padding:13px 16px;font-size:1.05rem}
 .login-help{font-size:.9rem}
 .auto-dismiss-alert{transition:opacity .2s ease}
-.login-brand{margin-bottom:14px;text-align:center}.login-brand img{height:140px;width:auto;max-width:100%;object-fit:contain;display:block;margin:0 auto}.login-brand-text{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.4rem;letter-spacing:-.5px;color:#f47b52;line-height:1.1;margin-top:8px;white-space:nowrap;display:inline-block}.login-brand-text::first-letter{color:#f47b52}
 @media(max-width:991.98px){
   .fixed-form-page{height:auto;min-height:0;overflow:visible}
   .table-scroll{max-height:60vh}
@@ -89,9 +88,7 @@
   .user-info{margin:8px 0}
 }
 @media(max-width:767.98px){
-  .login-title{font-size:1.8rem}
-  .login-brand img{height:112px}
-  .login-brand-text{font-size:1.08rem;white-space:nowrap}
+  .login-title{font-size:2.25rem}
   .document-upload-row{align-items:stretch;flex-direction:column}
   .report-popover{position:fixed;left:10px;right:10px;top:120px;width:auto}
   .fixed-form-page{min-height:0}
@@ -120,3 +117,352 @@
 /* Project ZIP controls stay on one clean line. */
 .project-actions{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}.project-upload-form{display:flex;align-items:center;gap:6px;min-width:0}.project-upload-form .form-control{width:185px;max-width:185px}.project-upload-form .btn{flex:0 0 auto}.password-status-box{min-height:48px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0}.password-status-box .status{display:inline-flex;align-items:center;gap:5px}
 @media(max-width:1100px){.project-actions{flex-wrap:wrap}.project-upload-form{flex-wrap:nowrap}}
+
+/* =========================================================
+   Mobile navigation
+   Desktop keeps the existing horizontal navigation.
+   On phones, navigation becomes a clean slide-out side menu.
+   ========================================================= */
+.mobile-menu-btn,
+.mobile-side-nav,
+.mobile-nav-overlay {
+  display:none;
+}
+
+@media (max-width: 991.98px) {
+  body.menu-open {
+    overflow:hidden;
+  }
+
+  .app-nav {
+    padding:10px 0;
+    position:sticky;
+    top:0;
+    z-index:1050;
+  }
+
+  .app-nav .container-fluid {
+    min-height:48px;
+  }
+
+  .nav-logo {
+    height:30px;
+    max-width:125px;
+    margin-right:7px;
+  }
+
+  .brand-name {
+    font-size:1rem;
+  }
+
+  .desktop-nav {
+    display:none !important;
+  }
+
+  .mobile-menu-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:42px;
+    height:42px;
+    margin-left:auto;
+    padding:0;
+    border:1px solid rgba(255,255,255,.22);
+    border-radius:9px;
+    background:transparent;
+    color:#fff;
+    font-size:1.55rem;
+    line-height:1;
+    cursor:pointer;
+  }
+
+  .mobile-menu-btn:active,
+  .mobile-menu-btn:focus {
+    background:rgba(255,255,255,.1);
+    outline:none;
+  }
+
+  .mobile-nav-overlay {
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:1100;
+    background:rgba(0,0,0,.42);
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .22s ease, visibility .22s ease;
+  }
+
+  .mobile-nav-overlay.show {
+    opacity:1;
+    visibility:visible;
+  }
+
+  .mobile-side-nav {
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    z-index:1110;
+    width:min(310px, 84vw);
+    background:#fff;
+    box-shadow:8px 0 30px rgba(23,33,43,.18);
+    transform:translateX(-105%);
+    transition:transform .25s ease;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .mobile-side-nav.open {
+    transform:translateX(0);
+  }
+
+  .mobile-side-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:18px 16px;
+    background:var(--nav);
+    color:#fff;
+  }
+
+  .mobile-user {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+
+  .mobile-user-avatar {
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    font-size:1.1rem;
+  }
+
+  .mobile-user strong,
+  .mobile-user small {
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .mobile-user strong {
+    max-width:190px;
+    font-size:.9rem;
+  }
+
+  .mobile-user small {
+    margin-top:2px;
+    color:#b8c2cb;
+    font-size:.72rem;
+  }
+
+  .mobile-close-btn {
+    width:38px;
+    height:38px;
+    flex:0 0 38px;
+    border:0;
+    border-radius:8px;
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    cursor:pointer;
+  }
+
+  .mobile-side-links {
+    display:flex;
+    flex-direction:column;
+    padding:14px 10px;
+    gap:3px;
+  }
+
+  .mobile-side-links a {
+    display:flex;
+    align-items:center;
+    gap:13px;
+    min-height:48px;
+    padding:11px 13px;
+    border-radius:9px;
+    color:var(--ink);
+    text-decoration:none;
+    font-size:.92rem;
+    font-weight:600;
+    transition:background .15s ease, color .15s ease;
+  }
+
+  .mobile-side-links a i {
+    width:21px;
+    text-align:center;
+    font-size:1rem;
+    color:var(--muted);
+  }
+
+  .mobile-side-links a:hover,
+  .mobile-side-links a:active {
+    background:#f1f4f6;
+    color:var(--ink);
+  }
+
+  .mobile-side-links a:hover i,
+  .mobile-side-links a:active i {
+    color:var(--accent);
+  }
+
+  .mobile-side-links .mobile-assign {
+    margin-top:8px;
+    background:var(--accent);
+    color:#fff;
+  }
+
+  .mobile-side-links .mobile-assign i {
+    color:#fff;
+  }
+
+  .mobile-side-footer {
+    margin-top:auto;
+    padding:12px 10px 18px;
+    border-top:1px solid var(--line);
+  }
+
+  .mobile-logout {
+    display:flex;
+    align-items:center;
+    gap:13px;
+    min-height:48px;
+    padding:11px 13px;
+    border-radius:9px;
+    color:#b02a2a;
+    text-decoration:none;
+    font-size:.92rem;
+    font-weight:700;
+  }
+
+  .mobile-logout:hover,
+  .mobile-logout:active {
+    background:#fff0f0;
+    color:#b02a2a;
+  }
+
+  /* Prevent horizontal overflow on small screens. */
+  html, body {
+    max-width:100%;
+    overflow-x:hidden;
+  }
+
+  main.container-fluid {
+    padding-left:14px !important;
+    padding-right:14px !important;
+    padding-top:20px !important;
+  }
+
+  footer.container-fluid {
+    padding-left:14px !important;
+    padding-right:14px !important;
+  }
+
+  .page-heading {
+    align-items:flex-start;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:20px;
+  }
+
+  .page-heading h1 {
+    font-size:1.55rem;
+    line-height:1.2;
+  }
+
+  .section-title {
+    margin-top:26px;
+  }
+
+  .card-body {
+    padding:16px !important;
+  }
+
+  .table-card {
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .table-card .table {
+    min-width:650px;
+  }
+
+  .report-section {
+    padding:16px;
+  }
+
+  .report-table {
+    min-width:0 !important;
+  }
+
+  .project-actions {
+    align-items:stretch;
+    flex-direction:column;
+    white-space:normal;
+  }
+
+  .project-upload-form {
+    width:100%;
+    flex-wrap:wrap;
+  }
+
+  .project-upload-form .form-control {
+    width:100%;
+    max-width:none;
+  }
+
+  .project-upload-form .btn {
+    width:100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .mobile-side-nav {
+    width:min(290px, 88vw);
+  }
+
+  .nav-logo {
+    max-width:110px;
+  }
+
+  .brand-name {
+    font-size:.92rem;
+  }
+
+  .metric-card {
+    padding:15px;
+  }
+
+  .page-heading h1 {
+    font-size:1.4rem;
+  }
+
+  .btn {
+    min-height:40px;
+  }
+
+  .form-control,
+  .form-select {
+    font-size:.95rem;
+  }
+
+  .report-score {
+    align-self:flex-start;
+    text-align:left;
+  }
+
+  .report-popover {
+    max-height:65vh;
+  }
+}

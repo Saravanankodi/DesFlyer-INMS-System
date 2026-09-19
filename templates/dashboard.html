@@ -7,7 +7,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-{% for label, value, icon, tone in [('Total interns', total_interns, 'people-fill', 'blue'),('Active interns', active_interns, 'person-check-fill', 'green'),('Past employees', past_employees, 'person-x-fill', 'red'),('Departments', total_departments, 'building-fill', 'cyan'),('Total tasks', total_tasks, 'list-check', 'violet'),('Completed', completed, 'check-circle-fill', 'green'),('Start', start, 'hourglass-split', 'amber'),('In progress', in_progress, 'arrow-repeat', 'cyan'),('Not completed', not_completed, 'x-circle-fill', 'red'),('Overdue', overdue, 'exclamation-triangle-fill', 'red')] %}
+{% for label, value, icon, tone in [('Total interns', total_interns, 'people-fill', 'blue'),('Total mentors', total_mentors, 'person-badge-fill', 'violet'),('Active interns', active_interns, 'person-check-fill', 'green'),('Past employees', past_employees, 'person-x-fill', 'red'),('Departments', total_departments, 'building-fill', 'cyan'),('Total tasks', total_tasks, 'list-check', 'violet'),('Completed', completed, 'check-circle-fill', 'green'),('Start', start, 'hourglass-split', 'amber'),('In progress', in_progress, 'arrow-repeat', 'cyan'),('Not completed', not_completed, 'x-circle-fill', 'red'),('Overdue', overdue, 'exclamation-triangle-fill', 'red')] %}
 <div class="col-6 col-xl-2"><div class="metric-card"><div class="metric-icon {{ tone }}"><i class="bi bi-{{ icon }}"></i></div><strong>{{ value }}</strong><span>{{ label }}</span></div></div>
 {% endfor %}
 </div>

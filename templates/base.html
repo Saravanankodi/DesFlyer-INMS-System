@@ -10,39 +10,33 @@
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark app-nav">
-    <div class="container-fluid px-4 px-lg-5">
+    <div class="container-fluid px-3 px-lg-5">
         <a class="navbar-brand" href="{{ url_for('home') }}">
-            <img class="nav-logo" src="{{ url_for('static', filename='desflyer-logo.png') }}" alt="DesFlyer logo"><span class="brand-name">IMS</span>
+            <img class="nav-logo" src="{{ url_for('static', filename='desflyer-logo.png') }}" alt="DesFlyer logo">
+            <span class="brand-name">IMS</span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="nav">
-            {% if current_user %}
-            <div class="navbar-nav ms-auto gap-lg-1 align-items-lg-center">
-                <a class="nav-link" href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
 
+        {% if current_user %}
+        <!-- Desktop navigation -->
+        <div class="desktop-nav ms-auto">
+            <div class="navbar-nav align-items-center gap-lg-1">
+                <a class="nav-link" href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
                 {% if current_user.role in ['admin', 'mentor'] %}
                 <a class="nav-link" href="{{ url_for('view_interns') }}"><i class="bi bi-people-fill"></i> Interns</a>
                 {% endif %}
-
                 {% if current_user.role == 'admin' %}
                 <a class="nav-link" href="{{ url_for('view_mentors') }}"><i class="bi bi-person-badge-fill"></i> Mentors</a>
                 {% endif %}
-
                 {% if current_user.role in ['admin', 'mentor'] %}
                 <a class="nav-link" href="{{ url_for('view_tasks') }}"><i class="bi bi-list-check"></i> Tasks</a>
                 <a class="nav-link" href="{{ url_for('reports') }}"><i class="bi bi-bar-chart-fill"></i> Reports</a>
                 {% endif %}
-
                 {% if current_user.role == 'admin' %}
                 <a class="nav-link" href="{{ url_for('user_management') }}"><i class="bi bi-person-gear"></i> Users</a>
                 {% endif %}
-
                 {% if current_user.role in ['admin', 'mentor'] %}
                 <a class="btn btn-accent ms-lg-2" href="{{ url_for('assign_task') }}"><i class="bi bi-plus-lg"></i> Assign task</a>
                 {% endif %}
-
                 <div class="user-info">
                     <span>{{ current_user.username }}</span><small>{{ current_user.role|capitalize }}</small>
                 </div>
@@ -50,10 +44,61 @@
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </a>
             </div>
-            {% endif %}
         </div>
+
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-btn" type="button" id="mobileMenuBtn"
+                aria-label="Open navigation menu" aria-controls="mobileSideNav" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
+        {% endif %}
     </div>
 </nav>
+
+{% if current_user %}
+<!-- Mobile side navigation -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+<aside class="mobile-side-nav" id="mobileSideNav" aria-hidden="true">
+    <div class="mobile-side-header">
+        <div class="mobile-user">
+            <div class="mobile-user-avatar"><i class="bi bi-person-fill"></i></div>
+            <div>
+                <strong>{{ current_user.username }}</strong>
+                <small>{{ current_user.role|capitalize }}</small>
+            </div>
+        </div>
+        <button class="mobile-close-btn" type="button" id="mobileCloseBtn" aria-label="Close navigation menu">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="mobile-side-links">
+        <a href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+        {% if current_user.role in ['admin', 'mentor'] %}
+        <a href="{{ url_for('view_interns') }}"><i class="bi bi-people-fill"></i><span>Interns</span></a>
+        {% endif %}
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('view_mentors') }}"><i class="bi bi-person-badge-fill"></i><span>Mentors</span></a>
+        {% endif %}
+        {% if current_user.role in ['admin', 'mentor'] %}
+        <a href="{{ url_for('view_tasks') }}"><i class="bi bi-list-check"></i><span>Tasks</span></a>
+        <a href="{{ url_for('reports') }}"><i class="bi bi-bar-chart-fill"></i><span>Reports</span></a>
+        {% endif %}
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('user_management') }}"><i class="bi bi-person-gear"></i><span>Users</span></a>
+        {% endif %}
+        {% if current_user.role in ['admin', 'mentor'] %}
+        <a class="mobile-assign" href="{{ url_for('assign_task') }}"><i class="bi bi-plus-lg"></i><span>Assign task</span></a>
+        {% endif %}
+    </div>
+
+    <div class="mobile-side-footer">
+        <a class="mobile-logout" href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+        </a>
+    </div>
+</aside>
+{% endif %}
 
 <main class="container-fluid px-4 px-lg-5 py-4 py-lg-5">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -76,6 +121,39 @@ document.addEventListener("DOMContentLoaded", () => {
             const instance = bootstrap.Alert.getOrCreateInstance(alert);
             instance.close();
         }, 3000);
+    });
+
+    const menuBtn = document.getElementById("mobileMenuBtn");
+    const closeBtn = document.getElementById("mobileCloseBtn");
+    const sideNav = document.getElementById("mobileSideNav");
+    const overlay = document.getElementById("mobileNavOverlay");
+
+    const openMenu = () => {
+        if (!sideNav || !overlay) return;
+        sideNav.classList.add("open");
+        overlay.classList.add("show");
+        sideNav.setAttribute("aria-hidden", "false");
+        menuBtn?.setAttribute("aria-expanded", "true");
+        document.body.classList.add("menu-open");
+    };
+
+    const closeMenu = () => {
+        if (!sideNav || !overlay) return;
+        sideNav.classList.remove("open");
+        overlay.classList.remove("show");
+        sideNav.setAttribute("aria-hidden", "true");
+        menuBtn?.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("menu-open");
+    };
+
+    menuBtn?.addEventListener("click", openMenu);
+    closeBtn?.addEventListener("click", closeMenu);
+    overlay?.addEventListener("click", closeMenu);
+
+    sideNav?.querySelectorAll("a").forEach(link => link.addEventListener("click", closeMenu));
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeMenu();
     });
 });
 </script>

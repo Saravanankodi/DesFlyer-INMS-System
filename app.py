@@ -7,6 +7,7 @@ from uuid import uuid4
 from xml.sax.saxutils import escape
 
 from flask import Flask, flash, redirect, render_template, request, send_file, session, url_for
+from werkzeug.utils import secure_filename
 import hashlib
 import secrets
 from reportlab.lib.pagesizes import A4
@@ -17,12 +18,34 @@ app = Flask(__name__)
 app.secret_key = "internship-tracker-development-key-change-me"
 
 BASE_DIR = Path(__file__).resolve().parent
+UPLOADS_DIR = BASE_DIR / "uploads"
+DOC_UPLOAD_DIR = UPLOADS_DIR / "documents"
+PROJECT_UPLOAD_DIR = UPLOADS_DIR / "projects"
+UPLOADS_DIR.mkdir(exist_ok=True)
+DOC_UPLOAD_DIR.mkdir(exist_ok=True)
+PROJECT_UPLOAD_DIR.mkdir(exist_ok=True)
 INTERNS_FILE = BASE_DIR / "interns.json"
 TASKS_FILE = BASE_DIR / "tasks.json"
 MENTORS_FILE = BASE_DIR / "mentors.json"
 USERS_FILE = BASE_DIR / "users.json"
-STATUSES = ("Pending", "In Progress", "Completed")
+STATUSES = ("Start", "In Progress", "Completed", "Not Completed")
 PRIORITIES = ("High", "Medium", "Low")
+DEFAULT_DEPARTMENTS = (
+    "Python Developement",
+    "UI and UX Design",
+    "Fullstack Developement",
+    "Frontend Developement",
+    "Backend Developement",
+    "Digital Marketing",
+    "Research and Development",
+    "Video Editing",
+    "Graphical Designing",
+    "Android Developement",
+    "HR Department",
+    "Sales Department",
+    "Finance Department",
+)
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 
 def calculate_end_date(joining_date, duration_months):
@@ -53,6 +76,57 @@ def save_json(path, value):
     path.write_text(json.dumps(value, indent=2), encoding="utf-8")
 
 
+def available_departments(interns=None, mentors=None):
+    interns = interns if interns is not None else load_json(INTERNS_FILE)
+    mentors = mentors if mentors is not None else load_json(MENTORS_FILE)
+    return list(DEFAULT_DEPARTMENTS)
+
+
+def save_upload(file_storage, folder, prefix):
+    if not file_storage or not file_storage.filename:
+        return None
+    filename = secure_filename(file_storage.filename)
+    if not filename:
+        return None
+    stored_name = f"{prefix}_{uuid4().hex[:12]}_{filename}"
+    destination = folder / stored_name
+    file_storage.save(destination)
+    return {"filename": filename, "stored_name": stored_name}
+
+
+def document_path(record):
+    if not record or not record.get("stored_name"):
+        return None
+    path = DOC_UPLOAD_DIR / record["stored_name"]
+    return path if path.exists() else None
+
+
+def project_path(record):
+    if not record or not record.get("stored_name"):
+        return None
+    path = PROJECT_UPLOAD_DIR / record["stored_name"]
+    return path if path.exists() else None
+
+
+def set_completed_timestamp(task, status):
+    normalized = normalize_task_status(status)
+    task["status"] = normalized
+    if normalized == "Completed":
+        task.setdefault("completed_at", date.today().isoformat())
+    else:
+        task.pop("completed_at", None)
+
+
+def task_department(task, interns):
+    if task.get("department"):
+        return task.get("department")
+    assigned_ids = task.get("assigned_intern_ids") or [task.get("intern_id")]
+    for intern in interns:
+        if intern.get("id") in assigned_ids:
+            return intern.get("department", "")
+    return ""
+
+
 def get_data():
     interns = load_json(INTERNS_FILE)
     changed = False
@@ -70,9 +144,25 @@ def get_data():
     return interns, load_json(TASKS_FILE), load_json(MENTORS_FILE)
 
 
+def normalize_task_status(value):
+    if value is None:
+        return "Start"
+    status = str(value).strip()
+    normalized = status.casefold()
+    if normalized in {"pending", "start"}:
+        return "Start"
+    if normalized in {"in progress", "in_progress"}:
+        return "In Progress"
+    if normalized in {"completed", "done"}:
+        return "Completed"
+    if normalized in {"not completed", "not-completed", "notcomplete", "uncompleted"}:
+        return "Not Completed"
+    return status if status in STATUSES else "Start"
+
+
 def is_overdue(task):
     try:
-        return task["status"] != "Completed" and date.fromisoformat(task["deadline"]) < date.today()
+        return normalize_task_status(task.get("status")) != "Completed" and date.fromisoformat(task["deadline"]) < date.today()
     except (KeyError, TypeError, ValueError):
         return False
 
@@ -80,11 +170,23 @@ def is_overdue(task):
 def intern_summary(intern, tasks):
     assigned = [{**task, "overdue": is_overdue(task)} for task in tasks
                 if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])]
-    completed = sum(task.get("status") == "Completed" for task in assigned)
+    completed = sum(normalize_task_status(task.get("status")) == "Completed" for task in assigned)
+    start_tasks = sum(normalize_task_status(task.get("status")) == "Start" for task in assigned)
+    not_completed_tasks = sum(normalize_task_status(task.get("status")) == "Not Completed" for task in assigned)
+    completed_items = [task for task in assigned if normalize_task_status(task.get("status")) == "Completed"]
+    latest_completed = max(
+        completed_items,
+        key=lambda task: task.get("completed_at") or task.get("deadline") or "",
+        default=None,
+    )
     return {**intern, "tasks": assigned, "total_tasks": len(assigned),
             "completed_tasks": completed,
-            "pending_tasks": sum(task.get("status") == "Pending" for task in assigned),
-            "in_progress_tasks": sum(task.get("status") == "In Progress" for task in assigned),
+            "start_tasks": start_tasks,
+            "pending_tasks": start_tasks,
+            "not_completed_tasks": not_completed_tasks,
+            "in_progress_tasks": sum(normalize_task_status(task.get("status")) == "In Progress" for task in assigned),
+            "latest_completed_task": latest_completed.get("title") if latest_completed else "No completed task yet",
+            "latest_completed_at": (latest_completed.get("completed_at") or latest_completed.get("deadline") or "") if latest_completed else "",
             "progress": round(completed / len(assigned) * 100, 1) if assigned else 0}
 
 
@@ -98,6 +200,7 @@ def decorate_tasks(tasks, interns):
                           "assigned_intern_ids": assigned_ids,
                           "assigned_names": assigned_names,
                           "intern_name": ", ".join(assigned_names),
+                          "department": task_department(task, interns),
                           "overdue": is_overdue(task)})
     return decorated
 
@@ -324,17 +427,23 @@ def dashboard():
         flash("Admin access is required.", "danger")
         return redirect(url_for("home"))
     interns, tasks, mentors = get_data()
-    completed = sum(task.get("status") == "Completed" for task in tasks)
-    pending = sum(task.get("status") == "Pending" for task in tasks)
-    in_progress = sum(task.get("status") == "In Progress" for task in tasks)
+    completed = sum(normalize_task_status(task.get("status")) == "Completed" for task in tasks)
+    start = sum(normalize_task_status(task.get("status")) == "Start" for task in tasks)
+    not_completed = sum(normalize_task_status(task.get("status")) == "Not Completed" for task in tasks)
+    in_progress = sum(normalize_task_status(task.get("status")) == "In Progress" for task in tasks)
     overdue = sum(is_overdue(task) for task in tasks)
     active_interns = sum(intern.get("employment_status") == "Active Intern" for intern in interns)
     past_employees = sum(intern.get("employment_status") == "Past Employee" for intern in interns)
     total_departments = len({intern.get("department") for intern in interns if intern.get("department")})
-    return render_template("dashboard.html", interns=[intern_summary(i, tasks) for i in interns],
+    intern_summaries = [intern_summary(i, tasks) for i in interns]
+    recent_completed = sorted(
+        [i for i in intern_summaries if i.get("latest_completed_at")],
+        key=lambda i: i.get("latest_completed_at", ""), reverse=True
+    )
+    return render_template("dashboard.html", interns=intern_summaries, recent_completed=recent_completed,
                            tasks=decorate_tasks(tasks, interns), total_interns=len(interns),
                            mentors=mentors, total_mentors=len(mentors), total_tasks=len(tasks),
-                           completed=completed, pending=pending, in_progress=in_progress,
+                           completed=completed, start=start, not_completed=not_completed, in_progress=in_progress,
                            overdue=overdue, active_interns=active_interns,
                            past_employees=past_employees, total_departments=total_departments,
                            progress=round(completed / len(tasks) * 100, 1) if tasks else 0)
@@ -348,8 +457,8 @@ def mentor_dashboard():
     interns, tasks, _ = get_data()
     ids = mentor_intern_ids(current_user(), interns)
     my_interns = [intern_summary(i, tasks) for i in interns if i.get("id") in ids]
-    my_tasks = [t for t in tasks if t.get("intern_id") in ids]
-    completed = sum(t.get("status") == "Completed" for t in my_tasks)
+    my_tasks = [t for t in tasks if ids.intersection(t.get("assigned_intern_ids", [t.get("intern_id")]))]
+    completed = sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks)
     return render_template("mentor_dashboard.html", interns=my_interns,
                            tasks=decorate_tasks(my_tasks, interns), total_tasks=len(my_tasks),
                            completed=completed, progress=round(completed / len(my_tasks) * 100, 1) if my_tasks else 0)
@@ -383,7 +492,10 @@ def view_interns():
     if role_required("mentor"):
         ids = mentor_intern_ids(current_user(), interns)
         enriched = [i for i in enriched if i.get("id") in ids]
-    return render_template("interns.html", interns=[intern_summary(i, tasks) for i in enriched])
+    enriched = [intern_summary(i, tasks) for i in enriched]
+    enriched.sort(key=lambda item: (0 if item.get("employment_status") == "Active Intern" else 1,
+                                    item.get("end_date") or "9999-12-31", item.get("name", "").casefold()))
+    return render_template("interns.html", interns=enriched, departments=available_departments(interns, mentors))
 
 
 @app.route("/interns/add", methods=["GET", "POST"])
@@ -396,6 +508,9 @@ def add_intern():
         intern = {field: request.form.get(field, "").strip() for field in
                   ("id", "name", "email", "phone", "department", "joining_date", "duration_months")}
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
+        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "intern")
+        if uploaded:
+            intern["document"] = uploaded
         try:
             duration_months = int(intern["duration_months"])
             end_date = calculate_end_date(intern["joining_date"], duration_months)
@@ -415,25 +530,125 @@ def add_intern():
             save_json(INTERNS_FILE, interns)
             flash("Intern added successfully.", "success")
             return redirect(url_for("view_interns"))
-    return render_template("add_intern.html", intern=None, mentors=mentors)
+    return render_template("add_intern.html", intern=None, mentors=mentors, departments=available_departments(interns, mentors))
 
 
-@app.post("/mentors/add")
+@app.route("/mentors")
+def view_mentors():
+    if not role_required("admin"):
+        flash("Only an admin can manage mentors.", "danger")
+        return redirect(url_for("home"))
+    interns, _, mentors = get_data()
+    rows = []
+    for mentor in mentors:
+        assigned_count = sum(i.get("assigned_mentor") == mentor.get("id") for i in interns)
+        rows.append({**mentor, "assigned_count": assigned_count})
+    return render_template("mentors.html", mentors=rows, departments=available_departments(interns, mentors))
+
+
+@app.route("/mentors/add", methods=["GET", "POST"])
 def add_mentor():
     if not role_required("admin"):
         flash("Only an admin can add mentors.", "danger")
         return redirect(url_for("home"))
-    mentor_name = request.form.get("name", "").strip()
-    mentors = load_json(MENTORS_FILE)
-    if not mentor_name:
-        flash("Enter a mentor name.", "danger")
-    elif any(mentor.get("name", "").casefold() == mentor_name.casefold() for mentor in mentors):
-        flash("That mentor already exists.", "danger")
+    interns, _, mentors = get_data()
+    if request.method == "POST":
+        mentor = {
+            "id": request.form.get("id", "").strip(),
+            "name": request.form.get("name", "").strip(),
+            "email": request.form.get("email", "").strip(),
+            "phone": request.form.get("phone", "").strip(),
+            "department": request.form.get("department", "").strip(),
+        }
+        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "mentor")
+        if uploaded:
+            mentor["document"] = uploaded
+        if not all(mentor.values()):
+            flash("Please complete every mentor field.", "danger")
+        elif any(m.get("id") == mentor["id"] for m in mentors):
+            flash("That Mentor ID is already in use.", "danger")
+        else:
+            mentors.append(mentor)
+            save_json(MENTORS_FILE, mentors)
+            flash("Mentor added successfully.", "success")
+            return redirect(url_for("view_mentors"))
+    return render_template("add_mentor.html", mentor=None, departments=available_departments(interns, mentors))
+
+
+@app.route("/mentors/<mentor_id>/edit", methods=["GET", "POST"])
+def edit_mentor(mentor_id):
+    if not role_required("admin"):
+        flash("Only an admin can edit mentors.", "danger")
+        return redirect(url_for("home"))
+    interns, _, mentors = get_data()
+    mentor = next((m for m in mentors if m.get("id") == mentor_id), None)
+    if not mentor:
+        flash("Mentor not found.", "danger")
+        return redirect(url_for("view_mentors"))
+    if request.method == "POST":
+        mentor["name"] = request.form.get("name", "").strip()
+        mentor["email"] = request.form.get("email", "").strip()
+        mentor["phone"] = request.form.get("phone", "").strip()
+        mentor["department"] = request.form.get("department", "").strip()
+        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "mentor")
+        if uploaded:
+            mentor["document"] = uploaded
+        if not all(mentor.get(field) for field in ("name", "email", "phone", "department")):
+            flash("Please complete every mentor field.", "danger")
+        else:
+            save_json(MENTORS_FILE, mentors)
+            flash("Mentor details updated.", "success")
+            return redirect(url_for("view_mentors"))
+    return render_template("add_mentor.html", mentor=mentor, departments=available_departments(interns, mentors))
+
+
+@app.post("/mentors/<mentor_id>/delete")
+def delete_mentor(mentor_id):
+    if not role_required("admin"):
+        flash("Only an admin can delete mentors.", "danger")
+        return redirect(url_for("home"))
+    interns, _, mentors = get_data()
+    if any(i.get("assigned_mentor") == mentor_id for i in interns):
+        flash("Reassign this mentor's interns before deleting the mentor.", "danger")
+    elif not any(m.get("id") == mentor_id for m in mentors):
+        flash("Mentor not found.", "danger")
     else:
-        mentors.append({"id": uuid4().hex[:10], "name": mentor_name})
-        save_json(MENTORS_FILE, mentors)
-        flash("Mentor added successfully. Create a user account in users.json if this mentor needs login access.", "success")
-    return redirect(url_for("dashboard"))
+        save_json(MENTORS_FILE, [m for m in mentors if m.get("id") != mentor_id])
+        flash("Mentor deleted.", "success")
+    return redirect(url_for("view_mentors"))
+
+
+@app.get("/documents/<kind>/<item_id>")
+def download_document(kind, item_id):
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    interns, _, mentors = get_data()
+    record = None
+    if kind == "intern":
+        record = next((i for i in interns if i.get("id") == item_id), None)
+        allowed = user.get("role") == "admin" or (
+            user.get("role") == "intern" and user.get("intern_id") == item_id
+        ) or (
+            user.get("role") == "mentor" and item_id in mentor_intern_ids(user, interns)
+        )
+    elif kind == "mentor":
+        record = next((m for m in mentors if m.get("id") == item_id), None)
+        allowed = user.get("role") == "admin" or (
+            user.get("role") == "mentor" and user.get("mentor_id") == item_id
+        )
+    else:
+        return redirect(url_for("home"))
+    if not record or not allowed:
+        flash("You do not have permission to download this document.", "danger")
+        return redirect(url_for("home"))
+    path = document_path(record.get("document"))
+    if not path:
+        flash("No document is available for this person.", "warning")
+        return redirect(url_for("home"))
+    return send_file(path, as_attachment=True, download_name=record["document"].get("filename", path.name))
+
+
 
 
 @app.route("/interns/<intern_id>/edit", methods=["GET", "POST"])
@@ -454,18 +669,21 @@ def edit_intern(intern_id):
             end_date = calculate_end_date(intern["joining_date"], duration_months)
         except (TypeError, ValueError):
             flash("Enter a valid internship duration and joining date.", "danger")
-            return render_template("add_intern.html", intern=intern, mentors=mentors)
+            return render_template("add_intern.html", intern=intern, mentors=mentors, departments=available_departments(interns, mentors))
         if duration_months <= 0:
             flash("Internship duration must be greater than zero.", "danger")
-            return render_template("add_intern.html", intern=intern, mentors=mentors)
+            return render_template("add_intern.html", intern=intern, mentors=mentors, departments=available_departments(interns, mentors))
         intern["duration_months"] = duration_months
         intern["end_date"] = end_date
         intern["employment_status"] = calculate_intern_status(end_date)
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
+        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "intern")
+        if uploaded:
+            intern["document"] = uploaded
         save_json(INTERNS_FILE, interns)
         flash("Intern details updated.", "success")
         return redirect(url_for("view_interns"))
-    return render_template("add_intern.html", intern=intern, mentors=mentors)
+    return render_template("add_intern.html", intern=intern, mentors=mentors, departments=available_departments(interns, mentors))
 
 
 @app.post("/interns/<intern_id>/delete")
@@ -529,28 +747,48 @@ def assign_task():
         ids = mentor_intern_ids(current_user(), interns)
         interns = [i for i in interns if i.get("id") in ids]
     if request.method == "POST":
+        manual_task_id = request.form.get("task_id", "").strip()
         task_type = request.form.get("task_type", "Individual Work").strip()
         selected_ids = [item.strip() for item in request.form.getlist("selected_intern_ids") if item.strip()]
         intern_id = request.form.get("intern_id", "").strip()
         if task_type == "Individual Work":
             selected_ids = [intern_id]
-        task = {"id": uuid4().hex[:10], "intern_id": selected_ids[0] if selected_ids else "",
+        department = request.form.get("department", "").strip()
+        project_id = request.form.get("project_id", "").strip()
+        title = request.form.get("title", "").strip()
+        if role_required("mentor") and project_id:
+            project = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
+            if project:
+                title = project.get("title", "").strip()
+        manual_task_id = request.form.get("task_id", "").strip()
+        task = {"id": manual_task_id, "intern_id": selected_ids[0] if selected_ids else "",
                 "task_type": task_type,
-                "title": request.form.get("title", "").strip(),
+                "department": department,
+                "title": title,
                 "description": request.form.get("description", "").strip(),
                 "deadline": request.form.get("deadline", ""),
                 "priority": request.form.get("priority", "Medium"),
-                "status": request.form.get("status", "Pending")}
+                "status": normalize_task_status(request.form.get("status", "Start")),
+                "created_by_role": current_user().get("role")}
         valid_ids = {item.get("id") for item in interns}
-        if task_type not in ("Individual Work", "Team Work"):
+        if not manual_task_id:
+            flash("Enter a Task ID.", "danger")
+        elif any(existing.get("id", "").casefold() == manual_task_id.casefold() for existing in tasks):
+            flash("That Task ID already exists. Enter a unique Task ID.", "danger")
+        elif role_required("mentor") and (not project_id or not next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)):
+            flash("Choose an admin-created project before assigning work.", "danger")
+        elif task_type not in ("Individual Work", "Team Work"):
             flash("Select a valid task type.", "danger")
-        elif not selected_ids or not task["title"] or not task["deadline"]:
-            flash("Select at least one intern, then provide a title and deadline.", "danger")
+        elif not department or not selected_ids or not task["title"] or not task["deadline"]:
+            flash("Select a department and at least one intern, then provide a title and deadline.", "danger")
         elif any(item not in valid_ids for item in selected_ids):
             flash("You cannot assign a task to that intern.", "danger")
+        elif any(next((i.get("department") for i in interns if i.get("id") == item), "") != department for item in selected_ids):
+            flash("All selected interns must belong to the chosen department.", "danger")
         elif task_type == "Individual Work" and len(selected_ids) != 1:
             flash("Individual Work must have exactly one intern selected.", "danger")
         else:
+            set_completed_timestamp(task, task["status"])
             task["assigned_intern_ids"] = selected_ids
             task["assigned_names"] = [next(item["name"] for item in interns if item["id"] == item_id)
                                        for item_id in selected_ids]
@@ -558,7 +796,10 @@ def assign_task():
             save_json(TASKS_FILE, tasks)
             flash("Task assigned successfully.", "success")
             return redirect(url_for("view_tasks"))
-    return render_template("assign_task.html", interns=interns, departments=sorted({item.get("department") for item in interns if item.get("department")}), task=None,
+    projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin"] if role_required("mentor") else []
+    return render_template("assign_task.html", interns=interns,
+                           departments=available_departments(interns),
+                           projects=projects, task=None,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -580,16 +821,35 @@ def edit_task(task_id):
     if role_required("mentor"):
         interns = [i for i in all_interns if i.get("id") in mentor_intern_ids(current_user(), all_interns)]
     active_interns = interns
+    task.setdefault("assigned_intern_ids", [task.get("intern_id")] if task.get("intern_id") else [])
+    if not task.get("department"):
+        task["department"] = task_department(task, all_interns)
     if request.method == "POST":
         task_type = request.form.get("task_type", "Individual Work").strip()
         selected_ids = [item.strip() for item in request.form.getlist("selected_intern_ids") if item.strip()]
         if task_type == "Individual Work":
             selected_ids = [request.form.get("intern_id", "").strip()]
-        for field in ("intern_id", "title", "description", "deadline", "priority", "status"):
-            if field != "intern_id":
-                task[field] = request.form.get(field, "").strip()
-        if task_type not in ("Individual Work", "Team Work") or not selected_ids or any(item not in {i.get("id") for i in active_interns} for item in selected_ids):
+        department = request.form.get("department", "").strip()
+        project_id = request.form.get("project_id", "").strip()
+        if role_required("mentor") and project_id:
+            project = next((p for p in tasks if p.get("id") == project_id), None)
+            if project:
+                task["title"] = project.get("title", "").strip()
+        else:
+            task["title"] = request.form.get("title", "").strip()
+        task["description"] = request.form.get("description", "").strip()
+        task["deadline"] = request.form.get("deadline", "").strip()
+        task["priority"] = request.form.get("priority", "Medium").strip()
+        set_completed_timestamp(task, request.form.get("status", "Start").strip())
+        task["department"] = department
+        if role_required("mentor") and (not project_id or not next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)):
+            flash("Choose an admin-created project before editing this task.", "danger")
+        elif task_type not in ("Individual Work", "Team Work") or not selected_ids or any(item not in {i.get("id") for i in active_interns} for item in selected_ids):
             flash("You cannot assign this task to that intern.", "danger")
+        elif not department:
+            flash("Select a department.", "danger")
+        elif any(next((i.get("department") for i in active_interns if i.get("id") == item), "") != department for item in selected_ids):
+            flash("All selected interns must belong to the chosen department.", "danger")
         elif task_type == "Individual Work" and len(selected_ids) != 1:
             flash("Individual Work must have exactly one intern selected.", "danger")
         else:
@@ -601,7 +861,10 @@ def edit_task(task_id):
             save_json(TASKS_FILE, tasks)
             flash("Task details updated.", "success")
             return redirect(url_for("view_tasks"))
-    return render_template("assign_task.html", interns=active_interns, departments=sorted({item.get("department") for item in active_interns if item.get("department")}), task=task,
+    projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin"] if role_required("mentor") else []
+    return render_template("assign_task.html", interns=active_interns,
+                           departments=available_departments(active_interns),
+                           projects=projects, task=task,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -614,7 +877,7 @@ def delete_task(task_id):
     task = next((t for t in tasks if t.get("id") == task_id), None)
     if task is None:
         flash("Task not found.", "danger")
-    elif role_required("mentor") and task.get("intern_id") not in mentor_intern_ids(current_user(), interns):
+    elif role_required("mentor") and not mentor_intern_ids(current_user(), interns).intersection(task.get("assigned_intern_ids", [task.get("intern_id")])):
         flash("You cannot delete this task.", "danger")
     else:
         save_json(TASKS_FILE, [t for t in tasks if t.get("id") != task_id])
@@ -630,14 +893,15 @@ def update_intern_task_status(task_id):
     interns, tasks, _ = get_data()
     user = current_user()
     task = next((t for t in tasks if t.get("id") == task_id), None)
-    if task is None or task.get("intern_id") != user.get("intern_id"):
+    if task is None or user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")]):
         flash("Task not found or access denied.", "danger")
         return redirect(url_for("intern_dashboard"))
     status = request.form.get("status", "").strip()
-    if status not in STATUSES:
+    normalized_status = normalize_task_status(status)
+    if normalized_status not in STATUSES:
         flash("Invalid task status.", "danger")
     else:
-        task["status"] = status
+        set_completed_timestamp(task, normalized_status)
         save_json(TASKS_FILE, tasks)
         flash("Task status updated. Your progress has been recalculated.", "success")
     return redirect(url_for("intern_dashboard"))
@@ -655,7 +919,20 @@ def reports():
     if role_required("mentor"):
         ids = mentor_intern_ids(current_user(), interns)
         enriched = [i for i in enriched if i.get("id") in ids]
-    return render_template("report.html", interns=[intern_summary(i, tasks) for i in enriched])
+    intern_rows = [intern_summary(i, tasks) for i in enriched]
+    mentor_rows = []
+    for mentor in mentors:
+        if role_required("mentor") and mentor.get("id") != current_user().get("mentor_id"):
+            continue
+        mentor_interns = [i for i in interns if i.get("assigned_mentor") == mentor.get("id")]
+        mentor_rows.append({
+            **mentor,
+            "assigned_count": len(mentor_interns),
+            "total_tasks": sum(intern_summary(i, tasks).get("total_tasks", 0) for i in mentor_interns),
+            "completed_tasks": sum(intern_summary(i, tasks).get("completed_tasks", 0) for i in mentor_interns),
+        })
+    return render_template("report.html", interns=intern_rows, mentors=mentor_rows,
+                           departments=available_departments(interns, mentors))
 
 
 @app.get("/download-report")
@@ -665,22 +942,44 @@ def download_report():
         return redirect(url_for("home"))
     interns, tasks, mentors = get_data()
     mentor_names = {mentor["id"]: mentor["name"] for mentor in mentors}
+    requested_intern = request.args.get("intern_id", "").strip()
+    requested_mentor = request.args.get("mentor_id", "").strip()
+
     if role_required("mentor"):
-        ids = mentor_intern_ids(current_user(), interns)
-        interns = [intern for intern in interns if intern.get("id") in ids]
+        allowed_ids = mentor_intern_ids(current_user(), interns)
+        interns = [intern for intern in interns if intern.get("id") in allowed_ids]
+        if requested_mentor and requested_mentor != current_user().get("mentor_id"):
+            requested_mentor = ""
+
+    if requested_intern:
+        interns = [intern for intern in interns if intern.get("id") == requested_intern]
     enriched = [{**intern, "mentor_name": mentor_names.get(intern.get("assigned_mentor"), "Unassigned")}
                 for intern in interns]
     report_rows = [intern_summary(intern, tasks) for intern in enriched]
+
+    if requested_mentor:
+        mentor = next((m for m in mentors if m.get("id") == requested_mentor), None)
+        if not mentor:
+            flash("Mentor not found.", "danger")
+            return redirect(url_for("reports"))
+        assigned = [i for i in load_json(INTERNS_FILE) if i.get("assigned_mentor") == requested_mentor]
+        report_rows = [intern_summary(i, tasks) for i in assigned]
+        title = f"Mentor Report - {mentor.get('name', 'Mentor')}"
+        filename = f"mentor-report-{secure_filename(mentor.get('name', 'mentor'))}.pdf"
+    else:
+        title = "Progress Reports" if not requested_intern else f"Progress Report - {report_rows[0].get('name', 'Intern') if report_rows else 'Intern'}"
+        filename = "progress-reports.pdf" if not requested_intern else f"progress-report-{secure_filename(report_rows[0].get('name', 'intern'))}.pdf"
+
     buffer = BytesIO()
-    document = SimpleDocTemplate(buffer, pagesize=A4, title="Progress Reports")
+    document = SimpleDocTemplate(buffer, pagesize=A4, title=title)
     styles = getSampleStyleSheet()
-    story = [Paragraph("Progress Reports", styles["Title"])]
+    story = [Paragraph(escape(title), styles["Title"])]
     for intern in report_rows:
         story.extend([
             Paragraph(escape(intern.get("name", "")), styles["Heading2"]),
             Paragraph(escape(f'{intern.get("department", "")} · {intern.get("email", "")} · ID {intern.get("id", "")}'), styles["BodyText"]),
             Paragraph(escape(f'Mentor: {intern.get("mentor_name", "Unassigned")}'), styles["BodyText"]),
-            Paragraph(escape(f'Progress: {intern.get("progress", 0)}%'), styles["BodyText"]),
+            Paragraph(escape(f'Progress: {intern.get("progress", 0)}% · Latest completed: {intern.get("latest_completed_task", "None")}'), styles["BodyText"]),
             Spacer(1, 6),
         ])
         rows = [["Assigned task", "Deadline", "Status"]]
@@ -689,14 +988,65 @@ def download_report():
                          task.get("deadline", ""), task.get("status", "")])
         if len(rows) == 1:
             rows.append(["No tasks assigned.", "", ""])
-        table = Table(rows, colWidths=[110, 100, 100], repeatRows=1)
+        table = Table(rows, colWidths=[210, 100, 100], repeatRows=1)
         table.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, "#cccccc"),
                                    ("BACKGROUND", (0, 0), (-1, 0), "#eef2f5")]))
         story.append(table)
+        story.append(Spacer(1, 14))
     document.build(story)
     buffer.seek(0)
-    return send_file(buffer, mimetype="application/pdf", as_attachment=True,
-                     download_name="progress-reports.pdf")
+    return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
+
+
+@app.post("/intern/tasks/<task_id>/upload")
+def upload_project(task_id):
+    if not role_required("intern"):
+        flash("Only interns can upload project files.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    user = current_user()
+    task = next((t for t in tasks if t.get("id") == task_id), None)
+    if task is None or user.get("intern_id") not in (task.get("assigned_intern_ids") or [task.get("intern_id")]):
+        flash("Task not found or access denied.", "danger")
+        return redirect(url_for("intern_dashboard"))
+    uploaded = save_upload(request.files.get("project_file"), PROJECT_UPLOAD_DIR, task_id)
+    if not uploaded:
+        flash("Choose a ZIP project file to upload.", "danger")
+    elif not uploaded["filename"].lower().endswith(".zip"):
+        path = PROJECT_UPLOAD_DIR / uploaded["stored_name"]
+        path.unlink(missing_ok=True)
+        flash("Only .zip project files are accepted.", "danger")
+    else:
+        task["project_file"] = uploaded
+        save_json(TASKS_FILE, tasks)
+        flash("Project ZIP uploaded successfully.", "success")
+    return redirect(url_for("intern_dashboard"))
+
+
+@app.get("/tasks/<task_id>/project")
+def download_project(task_id):
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    interns, tasks, _ = get_data()
+    task = next((t for t in tasks if t.get("id") == task_id), None)
+    if not task:
+        flash("Task not found.", "danger")
+        return redirect(url_for("home"))
+    assigned = set(task.get("assigned_intern_ids") or [task.get("intern_id")])
+    allowed = user.get("role") == "admin" or (
+        user.get("role") == "intern" and user.get("intern_id") in assigned
+    ) or (
+        user.get("role") == "mentor" and mentor_intern_ids(user, interns).intersection(assigned)
+    )
+    if not allowed:
+        flash("You do not have permission to download this project.", "danger")
+        return redirect(url_for("home"))
+    path = project_path(task.get("project_file"))
+    if not path:
+        flash("No project file is available.", "warning")
+        return redirect(url_for("home"))
+    return send_file(path, as_attachment=True, download_name=task["project_file"].get("filename", path.name))
 
 
 if __name__ == "__main__":

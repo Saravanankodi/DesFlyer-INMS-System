@@ -6,7 +6,14 @@
     "description": "SIP provider is not required for the initial local testing. We can use Asterisk with local SIP extensions/softphones for testing. If we need to make real phone calls, we can choose a SIP provider later.",
     "deadline": "2026-09-16",
     "priority": "High",
-    "status": "In Progress"
+    "status": "Completed",
+    "task_type": "Individual Work",
+    "assigned_intern_ids": [
+      "101"
+    ],
+    "assigned_names": [
+      "Gayathri B"
+    ]
   },
   {
     "id": "85e5525545",
@@ -40,7 +47,12 @@
     "description": "build using python and flask for easy use",
     "deadline": "2026-09-19",
     "priority": "Medium",
-    "status": "Completed"
+    "status": "Completed",
+    "project_file": {
+      "filename": "IMS_Internship_Management_System_Fixed.zip",
+      "stored_name": "92c148ff5a_2ec079da1741_IMS_Internship_Management_System_Fixed.zip"
+    },
+    "completed_at": "2026-09-19"
   },
   {
     "id": "fddc10cef6",
@@ -50,34 +62,5 @@
     "deadline": "2026-09-19",
     "priority": "High",
     "status": "In Progress"
-  },
-  {
-    "id": "9e9c2ac827",
-    "intern_id": "101",
-    "title": "testing",
-    "description": "testing",
-    "deadline": "2026-09-18",
-    "priority": "High",
-    "status": "Pending"
-  },
-  {
-    "id": "c62df86b73",
-    "intern_id": "101",
-    "task_type": "Team Work",
-    "title": "clear",
-    "description": "clear",
-    "deadline": "2026-09-18",
-    "priority": "High",
-    "status": "Pending",
-    "assigned_intern_ids": [
-      "101",
-      "102",
-      "103"
-    ],
-    "assigned_names": [
-      "Gayathri B",
-      "Pavithra B",
-      "Balaji"
-    ]
   }
 ]

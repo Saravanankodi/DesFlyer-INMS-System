@@ -29,13 +29,5 @@
     "password": "pbkdf2_sha256$8ee9cfcd2f0b56b1cf7f488f8f9af9f2$cb038791fe65852008a504b39067265bf9e7a495de8e1f1fc8535b3a79565534",
     "role": "intern",
     "intern_id": "101"
-  },
-  {
-    "id": "0f5be91855",
-    "username": "saravanan",
-    "email": "saravanan@gmail.com",
-    "password": "pbkdf2_sha256$b2ceb105114b0b22772b13b39b3056c2$be10a7e01aee1297b7c091790fb53d8b5f15c898ed385ca235729be9dc75ec94",
-    "role": "mentor",
-    "mentor_id": "c8dfb39ab8"
   }
 ]

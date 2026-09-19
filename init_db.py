@@ -119,7 +119,7 @@ def migrate_legacy_json():
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 [(task.get("id"), task.get("intern_id"), task.get("title", ""),
                   task.get("description", ""), task.get("deadline", ""),
-                  task.get("priority", "Medium"), task.get("status", "Pending"))
+                  task.get("priority", "Medium"), task.get("status", "Start"))
                  for task in _load_legacy_json("tasks.json")
                  if task.get("id") and task.get("intern_id")],
             )

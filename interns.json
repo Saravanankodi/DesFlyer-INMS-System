@@ -50,5 +50,21 @@
     "assigned_mentor": "102",
     "end_date": "2026-09-18",
     "employment_status": "Past Employee"
+  },
+  {
+    "name": "trisha",
+    "email": "trisha@gmail.com",
+    "phone": "66872766",
+    "department": "HR Department",
+    "joining_date": "2026-09-21",
+    "duration_months": 3,
+    "id": "DFIN001",
+    "assigned_mentor": "101",
+    "document": {
+      "filename": "progress-reports_1.pdf",
+      "stored_name": "intern_1e362530f135_progress-reports_1.pdf"
+    },
+    "end_date": "2026-12-21",
+    "employment_status": "Active Intern"
   }
 ]

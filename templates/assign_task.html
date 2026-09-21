@@ -11,7 +11,7 @@
 <form method="post" class="card form-card wide-form-card compact-form-card">
   <div class="card-body p-4 p-lg-4">
     <div class="row g-3">
-      <div class="col-md-3"><label class="form-label">Task ID</label><input class="form-control task-id-field" name="task_id" value="{{ task.id if task else '' }}" placeholder="Enter task ID" {{ 'readonly' if task else 'required' }}></div>
+      <div class="col-md-3"><label class="form-label">Task ID</label><input class="form-control task-id-field" id="taskId" name="task_id" value="{{ task.id if task else '' }}" placeholder="Select a department" readonly></div>
       <div class="col-md-3"><label class="form-label">Task Type</label>
         <select class="form-select" id="taskType" name="task_type" required>
           <option value="Individual Work" {{ 'selected' if not task or task.task_type == 'Individual Work' else '' }}>Individual Work</option>
@@ -25,7 +25,7 @@
           {% if not current_department and task and task.assigned_intern_ids %}
             {% for intern in interns %}{% if intern.id in task.assigned_intern_ids %}{% set current_department = intern.department %}{% endif %}{% endfor %}
           {% endif %}
-          {% for department in departments %}<option value="{{ department }}" {{ 'selected' if current_department == department else '' }}>{{ department }}</option>{% endfor %}
+          {% for department in departments %}<option value="{{ department }}" data-code="{{ department_codes.get(department, '') }}" {{ 'selected' if current_department == department else '' }}>{{ department }}, {{ department_codes.get(department, '') }}</option>{% endfor %}
         </select>
       </div>
 
@@ -86,7 +86,7 @@
 </div>
 
 <script>
-const taskType=document.getElementById("taskType"), taskDepartment=document.getElementById("taskDepartment");
+const taskType=document.getElementById("taskType"), taskDepartment=document.getElementById("taskDepartment"), taskId=document.getElementById("taskId");
 const individualPicker=document.getElementById("individualPicker"), teamPicker=document.getElementById("teamPicker"), individualIntern=document.getElementById("individualIntern");
 const teamButton=document.getElementById("teamMemberButton"), selectedTeamNames=document.getElementById("selectedTeamNames");
 const checkboxes=[...document.querySelectorAll(".team-member-checkbox")], titleInput=document.getElementById("taskTitle");
@@ -102,6 +102,11 @@ function filterPeopleByDepartment(){
     if(!show) box.checked=false;
   });
   syncTeamMembers();
+}
+function updateTaskId(){
+  if (!taskId || taskId.hasAttribute("data-existing")) return;
+  const option=taskDepartment.options[taskDepartment.selectedIndex];
+  taskId.value=option && option.dataset.code ? `DF${option.dataset.code}` : "";
 }
 function syncTaskType(){
   const team=taskType.value==="Team Work";
@@ -119,6 +124,7 @@ function syncTeamMembers(){
 }
 taskType.addEventListener("change",syncTaskType);
 taskDepartment.addEventListener("change",filterPeopleByDepartment);
+taskDepartment.addEventListener("change",updateTaskId);
 document.getElementById("applyTeamMembers").addEventListener("click",syncTeamMembers);
 document.getElementById("selectAllMembers").addEventListener("click",()=>{checkboxes.forEach(b=>{if(!b.closest(".team-member-option").classList.contains("d-none"))b.checked=true});syncTeamMembers()});
 document.getElementById("clearMembers").addEventListener("click",()=>{checkboxes.forEach(b=>b.checked=false);syncTeamMembers()});
@@ -130,7 +136,8 @@ if(projectSelect){
     else titleInput.readOnly=false;
   });
 }
-syncTeamMembers(); syncTaskType(); filterPeopleByDepartment();
+{% if task %}taskId.setAttribute("data-existing", "true");{% endif %}
+syncTeamMembers(); syncTaskType(); filterPeopleByDepartment(); updateTaskId();
 if(projectSelect && projectSelect.value) projectSelect.dispatchEvent(new Event("change"));
 </script>
 {% endblock %}

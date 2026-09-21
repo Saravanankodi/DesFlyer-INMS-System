@@ -9,9 +9,9 @@
 
   <form method="post" enctype="multipart/form-data" class="card form-card compact-form-card">
     <div class="card-body p-4 p-lg-4">
-      <div class="row g-3">
-        <div class="col-md-3"><label class="form-label">Intern ID</label><input class="form-control" name="id" value="{{ intern.id if intern else '' }}" {{ 'readonly' if intern else 'required' }}></div>
-        <div class="col-md-5"><label class="form-label">Intern Name</label><input class="form-control" name="name" value="{{ intern.name if intern else '' }}" required></div>
+      <div class="row g-3 intern-form-grid">
+        <div class="col-md-4"><label class="form-label">Intern ID</label><input class="form-control" name="id" value="{{ intern.id if intern else next_intern_id }}" readonly></div>
+        <div class="col-md-4"><label class="form-label">Intern Name</label><input class="form-control" name="name" value="{{ intern.name if intern else '' }}" required></div>
         <div class="col-md-4"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="{{ intern.email if intern else '' }}" required></div>
 
         <div class="col-md-4"><label class="form-label">Phone Number</label><input class="form-control" type="tel" name="phone" value="{{ intern.phone if intern else '' }}" required></div>

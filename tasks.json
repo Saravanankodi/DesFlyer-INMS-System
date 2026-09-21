@@ -25,5 +25,73 @@
       "stored_name": "1_6f91a831aa8a_client_reply_automation.zip"
     },
     "completed_at": "2026-09-19"
+  },
+  {
+    "id": "2",
+    "intern_id": "104",
+    "task_type": "Individual Work",
+    "department": "Fullstack Developement",
+    "title": "test",
+    "description": "tets",
+    "deadline": "2026-09-21",
+    "priority": "High",
+    "status": "In Progress",
+    "intern_status": "In Progress",
+    "mentor_status": "In Progress",
+    "mentor_pending_status": null,
+    "mentor_pending": false,
+    "created_by_role": "admin",
+    "assigned_intern_ids": [
+      "104"
+    ],
+    "assigned_names": [
+      "sakthi"
+    ]
+  },
+  {
+    "id": "3",
+    "intern_id": "103",
+    "task_type": "Individual Work",
+    "department": "Python Developement",
+    "title": "test",
+    "description": "tets",
+    "deadline": "2026-09-21",
+    "priority": "High",
+    "status": "Completed",
+    "intern_status": "Completed",
+    "mentor_status": "Completed",
+    "mentor_pending_status": null,
+    "mentor_pending": false,
+    "created_by_role": "mentor",
+    "assigned_intern_ids": [
+      "103"
+    ],
+    "assigned_names": [
+      "gayathri"
+    ],
+    "completed_at": "2026-09-21"
+  },
+  {
+    "id": "DFPD",
+    "intern_id": "101",
+    "task_type": "Individual Work",
+    "department": "Python Developement",
+    "title": "expense tracker",
+    "description": "TEST",
+    "deadline": "2026-09-22",
+    "priority": "High",
+    "status": "Completed",
+    "intern_status": "Completed",
+    "mentor_status": "Completed",
+    "mentor_pending_status": null,
+    "mentor_pending": false,
+    "created_by_role": "mentor",
+    "completed_at": "2026-09-21",
+    "assigned_intern_ids": [
+      "101"
+    ],
+    "assigned_names": [
+      "subash"
+    ]
   }
 ]

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}My Dashboard{% endblock %}
+{% block title %}My DASHBOARD{% endblock %}
 {% block content %}
-<div class="page-heading"><div><span class="eyebrow">Intern workspace</span><h1>Welcome, {{ intern.name }}.</h1><p class="text-muted">Track your internship tasks, project submissions, and progress.</p></div></div>
+<div class="page-heading"><div><span class="eyebrow workspace-label">Intern workspace</span><h1>Welcome, {{ intern.name }}.</h1><p class="text-muted">Track your internship tasks, project submissions, and progress.</p></div></div>
 <div class="row g-3 mb-4">
 {% for label, value, icon, tone in [('My tasks', intern.total_tasks, 'list-check', 'violet'),('Completed', intern.completed_tasks, 'check-circle-fill', 'green'),('Start', intern.start_tasks, 'hourglass-split', 'amber'),('In progress', intern.in_progress_tasks, 'arrow-repeat', 'cyan'),('Not completed', intern.not_completed_tasks, 'x-circle-fill', 'red'),('Progress', intern.progress ~ '%', 'graph-up-arrow', 'blue')] %}
 <div class="col-6 col-xl-2"><div class="metric-card"><div class="metric-icon {{ tone }}"><i class="bi bi-{{ icon }}"></i></div><strong>{{ value }}</strong><span>{{ label }}</span></div></div>

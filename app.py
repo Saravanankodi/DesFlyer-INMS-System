@@ -1,7 +1,7 @@
 import calendar
 import json
 from io import BytesIO
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from uuid import uuid4
 from xml.sax.saxutils import escape
@@ -28,6 +28,7 @@ INTERNS_FILE = BASE_DIR / "interns.json"
 TASKS_FILE = BASE_DIR / "tasks.json"
 MENTORS_FILE = BASE_DIR / "mentors.json"
 USERS_FILE = BASE_DIR / "users.json"
+NOTIFICATIONS_FILE = BASE_DIR / "notifications.json"
 STATUSES = ("Start", "In Progress", "Completed", "Not Completed")
 PRIORITIES = ("High", "Medium", "Low")
 DEFAULT_DEPARTMENTS = (
@@ -45,6 +46,21 @@ DEFAULT_DEPARTMENTS = (
     "Sales Department",
     "Finance Department",
 )
+DEPARTMENT_CODES = {
+    "Python Developement": "PD",
+    "UI and UX Design": "UI",
+    "Fullstack Developement": "FSD",
+    "Frontend Developement": "FD",
+    "Backend Developement": "BD",
+    "Digital Marketing": "DM",
+    "Research and Development": "R&D",
+    "Video Editing": "VE",
+    "Graphical Designing": "GE",
+    "Android Developement": "AD",
+    "HR Department": "HR",
+    "Sales Department": "SD",
+    "Finance Department": "FND",
+}
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # Allow large internship project ZIP uploads (up to 500 MB)
 
 
@@ -80,6 +96,84 @@ def load_json(path):
 
 def save_json(path, value):
     path.write_text(json.dumps(value, indent=2), encoding="utf-8")
+
+
+def next_profile_id(prefix, records):
+    sequence_numbers = []
+    for record in records:
+        value = str(record.get("id", ""))
+        suffix = value[len(prefix):] if value.startswith(prefix) else ""
+        if suffix.isdigit():
+            sequence_numbers.append(int(suffix))
+    return f"{prefix}{max(sequence_numbers, default=0) + 1:03d}"
+
+
+def task_id_for_department(department, tasks):
+    base_id = f"DF{DEPARTMENT_CODES.get(department, '')}"
+    if not base_id or base_id == "DF":
+        return ""
+    existing_ids = {str(task.get("id", "")).casefold() for task in tasks}
+    if base_id.casefold() not in existing_ids:
+        return base_id
+    suffix = 2
+    while f"{base_id}{suffix}".casefold() in existing_ids:
+        suffix += 1
+    return f"{base_id}{suffix}"
+
+
+def notification_timestamp():
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def add_notification(recipient_id, task, user_name, action):
+    if not recipient_id:
+        return
+    notifications = load_json(NOTIFICATIONS_FILE)
+    notifications.append({
+        "id": uuid4().hex,
+        "recipient_id": recipient_id,
+        "task_id": task.get("id", ""),
+        "task_title": task.get("title", "Untitled task"),
+        "user_name": user_name,
+        "action": action,
+        "created_at": notification_timestamp(),
+        "read": False,
+    })
+    save_json(NOTIFICATIONS_FILE, notifications)
+
+
+def notify_users(user_ids, task, user_name, action):
+    for user_id in dict.fromkeys(user_ids):
+        add_notification(user_id, task, user_name, action)
+
+
+def admin_user_ids():
+    return [user.get("id") for user in load_json(USERS_FILE) if user.get("role") == "admin"]
+
+
+def mentor_user_ids_for_task(task, interns):
+    users = load_json(USERS_FILE)
+    assigned_ids = task.get("assigned_intern_ids") or [task.get("intern_id")]
+    mentor_ids = {intern.get("assigned_mentor") for intern in interns
+                  if intern.get("id") in assigned_ids and intern.get("assigned_mentor")}
+    return [user.get("id") for user in users
+            if user.get("role") == "mentor" and user.get("mentor_id") in mentor_ids]
+
+
+def notify_task_assignees(task, interns, actor_name):
+    users = load_json(USERS_FILE)
+    selected_ids = task.get("assigned_intern_ids") or [task.get("intern_id")]
+    recipient_ids = []
+    for intern_id in selected_ids:
+        intern = next((item for item in interns if item.get("id") == intern_id), None)
+        if not intern:
+            continue
+        recipient_ids.extend(user.get("id") for user in users
+                             if user.get("role") == "intern" and user.get("intern_id") == intern_id)
+        recipient_ids.extend(user.get("id") for user in users
+                             if user.get("role") == "mentor" and
+                             user.get("mentor_id") == intern.get("assigned_mentor"))
+    notify_users(recipient_ids, task, actor_name, "Task assigned")
 
 
 def available_departments(interns=None, mentors=None):
@@ -298,7 +392,15 @@ def mentor_intern_ids(user, interns):
 
 @app.context_processor
 def navigation_data():
-    return {"current_year": date.today().year, "current_user": current_user()}
+    user = current_user()
+    notifications = []
+    if user:
+        notifications = [item for item in load_json(NOTIFICATIONS_FILE)
+                         if item.get("recipient_id") == user.get("id")]
+        notifications.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    return {"current_year": date.today().year, "current_user": user,
+            "notifications": notifications[:12],
+            "unread_notifications": sum(not item.get("read", False) for item in notifications)}
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -542,7 +644,8 @@ def add_intern():
     interns, _, mentors = get_data()
     if request.method == "POST":
         intern = {field: request.form.get(field, "").strip() for field in
-                  ("id", "name", "email", "phone", "department", "joining_date", "duration_months")}
+              ("name", "email", "phone", "department", "joining_date", "duration_months")}
+        intern["id"] = next_profile_id("DFIN", interns)
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
         uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "intern")
         if uploaded:
@@ -566,7 +669,8 @@ def add_intern():
             save_json(INTERNS_FILE, interns)
             flash("Intern added successfully.", "success")
             return redirect(url_for("view_interns"))
-    return render_template("add_intern.html", intern=None, mentors=mentors, departments=available_departments(interns, mentors))
+    return render_template("add_intern.html", intern=None, next_intern_id=next_profile_id("DFIN", interns),
+                           mentors=mentors, departments=available_departments(interns, mentors))
 
 
 @app.route("/mentors")
@@ -590,7 +694,7 @@ def add_mentor():
     interns, _, mentors = get_data()
     if request.method == "POST":
         mentor = {
-            "id": request.form.get("id", "").strip(),
+            "id": next_profile_id("DFM", mentors),
             "name": request.form.get("name", "").strip(),
             "email": request.form.get("email", "").strip(),
             "phone": request.form.get("phone", "").strip(),
@@ -608,7 +712,8 @@ def add_mentor():
             save_json(MENTORS_FILE, mentors)
             flash("Mentor added successfully.", "success")
             return redirect(url_for("view_mentors"))
-    return render_template("add_mentor.html", mentor=None, departments=available_departments(interns, mentors))
+    return render_template("add_mentor.html", mentor=None, next_mentor_id=next_profile_id("DFM", mentors),
+                           departments=available_departments(interns, mentors))
 
 
 @app.route("/mentors/<mentor_id>/edit", methods=["GET", "POST"])
@@ -786,20 +891,19 @@ def assign_task():
         ids = mentor_intern_ids(current_user(), interns)
         interns = [i for i in interns if i.get("id") in ids]
     if request.method == "POST":
-        manual_task_id = request.form.get("task_id", "").strip()
         task_type = request.form.get("task_type", "Individual Work").strip()
         selected_ids = [item.strip() for item in request.form.getlist("selected_intern_ids") if item.strip()]
         intern_id = request.form.get("intern_id", "").strip()
         if task_type == "Individual Work":
             selected_ids = [intern_id]
         department = request.form.get("department", "").strip()
+        manual_task_id = task_id_for_department(department, tasks)
         project_id = request.form.get("project_id", "").strip()
         title = request.form.get("title", "").strip()
         if role_required("mentor") and project_id:
             project = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
             if project:
                 title = project.get("title", "").strip()
-        manual_task_id = request.form.get("task_id", "").strip()
         task = {"id": manual_task_id, "intern_id": selected_ids[0] if selected_ids else "",
                 "task_type": task_type,
                 "department": department,
@@ -815,7 +919,7 @@ def assign_task():
                 "created_by_role": current_user().get("role")}
         valid_ids = {item.get("id") for item in interns}
         if not manual_task_id:
-            flash("Enter a Task ID.", "danger")
+            flash("Select a valid department to generate the Task ID.", "danger")
         elif any(existing.get("id", "").casefold() == manual_task_id.casefold() for existing in tasks):
             flash("That Task ID already exists. Enter a unique Task ID.", "danger")
         elif role_required("mentor") and (not project_id or not next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)):
@@ -837,12 +941,14 @@ def assign_task():
                                        for item_id in selected_ids]
             tasks.append(task)
             save_json(TASKS_FILE, tasks)
+            if current_user().get("role") == "admin":
+                notify_task_assignees(task, interns, current_user().get("username", "Admin"))
             flash("Task assigned successfully.", "success")
             return redirect(url_for("view_tasks"))
     projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin"] if role_required("mentor") else []
     return render_template("assign_task.html", interns=interns,
                            departments=available_departments(interns),
-                           projects=projects, task=None,
+                           department_codes=DEPARTMENT_CODES, projects=projects, task=None,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -908,12 +1014,14 @@ def edit_task(task_id):
             task["assigned_names"] = [next(item["name"] for item in active_interns if item["id"] == item_id)
                                        for item_id in selected_ids]
             save_json(TASKS_FILE, tasks)
+            if role_required("mentor") and requested_status == "Completed":
+                notify_users(admin_user_ids(), task, current_user().get("username", "Mentor"), "Marked task as completed")
             flash("Task details updated.", "success")
             return redirect(url_for("view_tasks"))
     projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin"] if role_required("mentor") else []
     return render_template("assign_task.html", interns=active_interns,
                            departments=available_departments(active_interns),
-                           projects=projects, task=task,
+                           department_codes=DEPARTMENT_CODES, projects=projects, task=task,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -954,6 +1062,9 @@ def update_intern_task_status(task_id):
         task["mentor_pending_status"] = normalized_status
         task["mentor_pending"] = True
         save_json(TASKS_FILE, tasks)
+        if normalized_status == "Completed":
+            notify_users(admin_user_ids() + mentor_user_ids_for_task(task, interns),
+                         task, user.get("username", "Intern"), "Marked task as completed")
         flash("Status sent to your mentor for confirmation. Admin status will update after mentor confirmation.", "success")
     return redirect(url_for("intern_dashboard"))
 
@@ -987,6 +1098,20 @@ def confirm_intern_task_status(task_id):
     save_json(TASKS_FILE, tasks)
     flash("Intern status confirmed. The admin view has been updated.", "success")
     return redirect(url_for("mentor_dashboard"))
+
+
+@app.post("/notifications/<notification_id>/read")
+def mark_notification_read(notification_id):
+    if not login_required():
+        return redirect(url_for("login"))
+    notifications = load_json(NOTIFICATIONS_FILE)
+    for notification in notifications:
+        if (notification.get("id") == notification_id and
+                notification.get("recipient_id") == current_user().get("id")):
+            notification["read"] = True
+            break
+    save_json(NOTIFICATIONS_FILE, notifications)
+    return redirect(request.referrer or url_for("home"))
 
 
 @app.route("/reports")

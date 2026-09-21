@@ -12,7 +12,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark app-nav">
     <div class="container-fluid px-3 px-lg-5">
         <a class="navbar-brand" href="{{ url_for('home') }}">
-            <img class="nav-logo" src="{{ url_for('static', filename='desflyer-logo.png') }}" alt="DesFlyer logo">
+            <img class="nav-logo" src="{{ url_for('static', filename='images/desflyer-logo1.png') }}" alt="DesFlyer logo">
             <span class="brand-name">IMS</span>
         </a>
 
@@ -20,7 +20,7 @@
         <!-- Desktop navigation -->
         <div class="desktop-nav ms-auto">
             <div class="navbar-nav align-items-center gap-lg-1">
-                <a class="nav-link" href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+                <a class="nav-link" href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i> DASHBOARD</a>
                 {% if current_user.role in ['admin', 'mentor'] %}
                 <a class="nav-link" href="{{ url_for('view_interns') }}"><i class="bi bi-people-fill"></i> Interns</a>
                 {% endif %}
@@ -39,6 +39,32 @@
                 {% endif %}
                 <div class="user-info">
                     <span>{{ current_user.username }}</span><small>{{ current_user.role|capitalize }}</small>
+                </div>
+                <div class="notification-menu">
+                    <button class="notification-button" type="button" id="notificationButton"
+                            aria-label="Notifications" aria-controls="notificationDropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill"></i>
+                        {% if unread_notifications %}<span class="notification-count">{{ unread_notifications }}</span>{% endif %}
+                    </button>
+                    <div class="notification-dropdown" id="notificationDropdown" aria-hidden="true">
+                        <div class="notification-header"><strong>Notifications</strong><span>{{ unread_notifications }} unread</span></div>
+                        <div class="notification-list">
+                        {% for notification in notifications %}
+                            <div class="notification-item{% if not notification.read %} unread{% endif %}">
+                                <div class="notification-item-top"><strong>{{ notification.task_title }}</strong>{% if not notification.read %}<span class="notification-unread-dot"></span>{% endif %}</div>
+                                <p><b>{{ notification.user_name }}</b> {{ notification.action|lower }}.</p>
+                                <small>{{ notification.created_at.replace('T', ' ') }}</small>
+                                {% if not notification.read %}
+                                <form method="post" action="{{ url_for('mark_notification_read', notification_id=notification.id) }}">
+                                    <button class="notification-read" type="submit">Mark as read</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="notification-empty"><i class="bi bi-check2-circle"></i><span>You're all caught up.</span></div>
+                        {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 <a class="btn btn-outline-light btn-sm ms-lg-1" href="{{ url_for('logout') }}">
                     <i class="bi bi-box-arrow-right"></i> Logout
@@ -73,7 +99,7 @@
     </div>
 
     <div class="mobile-side-links">
-        <a href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+        <a href="{{ url_for('home') }}"><i class="bi bi-grid-1x2-fill"></i><span>DASHBOARD</span></a>
         {% if current_user.role in ['admin', 'mentor'] %}
         <a href="{{ url_for('view_interns') }}"><i class="bi bi-people-fill"></i><span>Interns</span></a>
         {% endif %}
@@ -93,6 +119,9 @@
     </div>
 
     <div class="mobile-side-footer">
+        {% if notifications %}
+        <div class="mobile-notification-summary"><i class="bi bi-bell-fill"></i><span>{{ unread_notifications }} unread notification{{ '' if unread_notifications == 1 else 's' }}</span></div>
+        {% endif %}
         <a class="mobile-logout" href="{{ url_for('logout') }}">
             <i class="bi bi-box-arrow-right"></i><span>Logout</span>
         </a>
@@ -127,6 +156,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeBtn = document.getElementById("mobileCloseBtn");
     const sideNav = document.getElementById("mobileSideNav");
     const overlay = document.getElementById("mobileNavOverlay");
+    const notificationButton = document.getElementById("notificationButton");
+    const notificationDropdown = document.getElementById("notificationDropdown");
+
+    const closeNotifications = () => {
+        notificationDropdown?.classList.remove("open");
+        notificationDropdown?.setAttribute("aria-hidden", "true");
+        notificationButton?.setAttribute("aria-expanded", "false");
+    };
+
+    notificationButton?.addEventListener("click", event => {
+        event.stopPropagation();
+        const isOpen = notificationDropdown?.classList.toggle("open");
+        notificationDropdown?.setAttribute("aria-hidden", String(!isOpen));
+        notificationButton.setAttribute("aria-expanded", String(Boolean(isOpen)));
+    });
 
     const openMenu = () => {
         if (!sideNav || !overlay) return;
@@ -154,6 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") closeMenu();
+    });
+
+    document.addEventListener("click", event => {
+        if (!notificationDropdown?.contains(event.target) && event.target !== notificationButton) {
+            closeNotifications();
+        }
     });
 });
 </script>

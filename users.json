@@ -9,7 +9,7 @@
   {
     "id": "mentor01",
     "username": "atchayasri",
-    "password": "pbkdf2_sha256$70fd5e674c324dd3780527364d9b9c3e$16ab5048098c3aab8305f81926b2838336bd30692a81dd1c4c11ec42f1dc3986",
+    "password": "pbkdf2_sha256$35a4e37c04ce0b3afcafeb503af84a57$ec46ba02c5f7f9622299250d1ed3ed6daf497b0cb9c9c17abeb07450245deaa7",
     "role": "mentor",
     "email": "atchayasri@gmail.com",
     "mentor_id": "101"

@@ -93,5 +93,28 @@
     "assigned_names": [
       "subash"
     ]
+  },
+  {
+    "id": "DFPD2",
+    "intern_id": "103",
+    "task_type": "Individual Work",
+    "department": "Python Developement",
+    "title": "TEST",
+    "description": "TEST",
+    "deadline": "2026-09-21",
+    "priority": "High",
+    "status": "Completed",
+    "intern_status": "Completed",
+    "mentor_status": "Completed",
+    "mentor_pending_status": null,
+    "mentor_pending": false,
+    "created_by_role": "admin",
+    "completed_at": "2026-09-21",
+    "assigned_intern_ids": [
+      "103"
+    ],
+    "assigned_names": [
+      "gayathri"
+    ]
   }
 ]

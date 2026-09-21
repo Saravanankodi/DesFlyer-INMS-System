@@ -1,5 +1,6 @@
 import calendar
 import json
+import re
 from io import BytesIO
 from datetime import date, datetime
 from pathlib import Path
@@ -32,6 +33,13 @@ NOTIFICATIONS_FILE = BASE_DIR / "notifications.json"
 STATUSES = ("Start", "In Progress", "Completed", "Not Completed")
 PRIORITIES = ("High", "Medium", "Low")
 DEFAULT_DEPARTMENTS = (
+    "Digital Marketing",
+    "Human Resources",
+    "Python Development",
+    "Web Development",
+    "Data Science",
+    "UI/UX Design",
+    "Testing / QA",
     "Python Developement",
     "UI and UX Design",
     "Fullstack Developement",
@@ -47,6 +55,13 @@ DEFAULT_DEPARTMENTS = (
     "Finance Department",
 )
 DEPARTMENT_CODES = {
+    "Digital Marketing": "DM",
+    "Human Resources": "HR",
+    "Python Development": "PY",
+    "Web Development": "WD",
+    "Data Science": "DS",
+    "UI/UX Design": "UI",
+    "Testing / QA": "QA",
     "Python Developement": "PD",
     "UI and UX Design": "UI",
     "Fullstack Developement": "FSD",
@@ -109,16 +124,14 @@ def next_profile_id(prefix, records):
 
 
 def task_id_for_department(department, tasks):
-    base_id = f"DF{DEPARTMENT_CODES.get(department, '')}"
-    if not base_id or base_id == "DF":
+    code = DEPARTMENT_CODES.get(department, "")
+    if not code:
         return ""
-    existing_ids = {str(task.get("id", "")).casefold() for task in tasks}
-    if base_id.casefold() not in existing_ids:
-        return base_id
-    suffix = 2
-    while f"{base_id}{suffix}".casefold() in existing_ids:
-        suffix += 1
-    return f"{base_id}{suffix}"
+    base_id = f"DF{code}"
+    pattern = re.compile(rf"^{re.escape(base_id)}(\d+)$", re.IGNORECASE)
+    sequence_numbers = [int(match.group(1)) for task in tasks
+                        if (match := pattern.match(str(task.get("id", ""))))]
+    return f"{base_id}{max(sequence_numbers, default=0) + 1:02d}"
 
 
 def notification_timestamp():
@@ -948,7 +961,10 @@ def assign_task():
     projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin"] if role_required("mentor") else []
     return render_template("assign_task.html", interns=interns,
                            departments=available_departments(interns),
-                           department_codes=DEPARTMENT_CODES, projects=projects, task=None,
+                           department_codes=DEPARTMENT_CODES,
+                           department_task_ids={department: task_id_for_department(department, tasks)
+                                                for department in available_departments(interns)},
+                           projects=projects, task=None,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 
@@ -1021,7 +1037,10 @@ def edit_task(task_id):
     projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin"] if role_required("mentor") else []
     return render_template("assign_task.html", interns=active_interns,
                            departments=available_departments(active_interns),
-                           department_codes=DEPARTMENT_CODES, projects=projects, task=task,
+                           department_codes=DEPARTMENT_CODES,
+                           department_task_ids={department: task_id_for_department(department, tasks)
+                                                for department in available_departments(active_interns)},
+                           projects=projects, task=task,
                            priorities=PRIORITIES, statuses=STATUSES)
 
 

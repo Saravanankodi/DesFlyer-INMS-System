@@ -2,7 +2,6 @@
 {% block title %}{{ 'Edit Task' if task else 'Assign Task' }}{% endblock %}
 {% block content %}
 <div class="fixed-form-page">
-<div class="fixed-form-page">
 <div class="page-heading compact-heading">
   <div><span class="eyebrow">Work allocation</span><h1>{{ 'Edit task details' if task else 'Assign a task' }}</h1></div>
   <a class="btn btn-outline-secondary" href="{{ url_for('view_tasks') }}"><i class="bi bi-arrow-left"></i> Back to tasks</a>
@@ -30,19 +29,18 @@
       </div>
 
       {% if current_user.role == 'mentor' %}
-      <div class="col-md-3"><label class="form-label">Choose Project</label>
+      <div class="col-md-3"><label class="form-label">Parent Admin Task</label>
         <select class="form-select" id="projectSelect" name="project_id" required>
-          <option value="">Select an admin project</option>
+          <option value="">Select an admin task</option>
           {% for project in projects %}
-          <option value="{{ project.id }}" data-title="{{ project.title|e }}" {{ 'selected' if task and project.id == task.id else '' }}>{{ project.title }} · {{ project.id }}</option>
+          <option value="{{ project.id }}" data-title="{{ project.title|e }}" data-department="{{ project.department|e }}" {{ 'selected' if task and task.parent_task_id == project.id else '' }}>{{ project.title }} · {{ project.id }}</option>
           {% endfor %}
         </select>
-        <small class="text-muted">The project title is taken from the selected project.</small>
       </div>
       {% endif %}
 
-      <div class="col-md-6" id="titleWrap"><label class="form-label">Task Title</label>
-        <input class="form-control" id="taskTitle" name="title" value="{{ task.title if task else '' }}" required>
+      <div class="col-md-6" id="titleWrap"><label class="form-label">{{ 'Subtask Title' if current_user.role == 'mentor' else 'Task Title' }}</label>
+        <input class="form-control" id="taskTitle" name="title" value="{{ task.title if task else '' }}" placeholder="{{ 'Enter the subtask assigned by you' if current_user.role == 'mentor' else 'Enter task title' }}" required>
       </div>
 
       <div class="col-md-6" id="individualPicker"><label class="form-label">Select Intern</label>
@@ -59,9 +57,10 @@
       </div>
 
       <div class="col-12"><label class="form-label">Task Description</label><textarea class="form-control" name="description" rows="5" placeholder="What needs to be delivered?">{{ task.description if task else '' }}</textarea></div>
-      <div class="col-md-4"><label class="form-label">Deadline</label><input class="form-control" type="date" name="deadline" value="{{ task.deadline if task else '' }}" required></div>
-      <div class="col-md-4"><label class="form-label">Priority</label><select class="form-select" name="priority">{% for priority in priorities %}<option {{ 'selected' if task and task.priority == priority else '' }}>{{ priority }}</option>{% endfor %}</select></div>
-      <div class="col-md-4"><label class="form-label">Status</label><select class="form-select" name="status">{% for status in statuses %}<option {{ 'selected' if task and task.status == status else '' }}>{{ status }}</option>{% endfor %}</select></div>
+      <div class="col-md-3"><label class="form-label">Starting Date</label><input class="form-control" type="date" name="start_date" value="{{ task.start_date if task else '' }}" required></div>
+      <div class="col-md-3"><label class="form-label">Deadline</label><input class="form-control" type="date" name="deadline" value="{{ task.deadline if task else '' }}" required></div>
+      <div class="col-md-3"><label class="form-label">Priority</label><select class="form-select" name="priority">{% for priority in priorities %}<option {{ 'selected' if task and task.priority == priority else '' }}>{{ priority }}</option>{% endfor %}</select></div>
+      <div class="col-md-3"><label class="form-label">Status</label><select class="form-select" name="status">{% for status in statuses %}<option {{ 'selected' if task and task.status == status else '' }}>{{ status }}</option>{% endfor %}</select></div>
     </div>
     <div class="mt-4 d-flex justify-content-end"><button class="btn btn-primary px-4" type="submit"><i class="bi bi-check2-circle"></i> {{ 'Save changes' if task else 'Assign task' }}</button></div>
   </div>
@@ -132,8 +131,7 @@ document.getElementById("teamMemberSearch").addEventListener("input",e=>{const q
 if(projectSelect){
   projectSelect.addEventListener("change",()=>{
     const option=projectSelect.options[projectSelect.selectedIndex];
-    if(option && option.dataset.title){titleInput.value=option.dataset.title;titleInput.readOnly=true;}
-    else titleInput.readOnly=false;
+    if(option && option.dataset.department && !taskDepartment.value){ taskDepartment.value=option.dataset.department; filterPeopleByDepartment(); updateTaskId(); }
   });
 }
 {% if task %}taskId.setAttribute("data-existing", "true");{% endif %}

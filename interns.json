@@ -66,5 +66,17 @@
     },
     "end_date": "2026-12-21",
     "employment_status": "Active Intern"
+  },
+  {
+    "name": "surya",
+    "email": "surya@gmail.com",
+    "phone": "7894561230",
+    "department": "Python Development",
+    "joining_date": "2026-09-21",
+    "duration_months": 2,
+    "id": "DFIN002",
+    "assigned_mentor": "101",
+    "end_date": "2026-11-21",
+    "employment_status": "Active Intern"
   }
 ]

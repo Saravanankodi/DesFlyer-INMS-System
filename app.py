@@ -609,10 +609,22 @@ def mentor_dashboard():
     ids = mentor_intern_ids(current_user(), interns)
     my_interns = [intern_summary(i, tasks, role="mentor") for i in interns if i.get("id") in ids]
     my_tasks = [t for t in tasks if ids.intersection(t.get("assigned_intern_ids", [t.get("intern_id")]))]
+    admin_tasks = [t for t in my_tasks if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")]
+    mentor_subtasks = [t for t in my_tasks if t.get("created_by_role") == "mentor" or t.get("parent_task_id")]
+    parent_titles = {t.get("id"): t.get("title", "") for t in tasks}
+    def prepare(row):
+        item = decorate_tasks([row], interns)[0]
+        item["parent_task_title"] = row.get("parent_task_title") or parent_titles.get(row.get("parent_task_id"), "")
+        item["start_date"] = row.get("start_date", "")
+        item["duration_months"] = row.get("duration_months")
+        return item
+    admin_tasks = [prepare(t) for t in admin_tasks]
+    mentor_subtasks = [prepare(t) for t in mentor_subtasks]
     completed = sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks)
     return render_template("mentor_dashboard.html", interns=my_interns,
-                           tasks=decorate_tasks(my_tasks, interns), total_tasks=len(my_tasks),
-                           completed=completed, progress=round(completed / len(my_tasks) * 100, 1) if my_tasks else 0)
+                           tasks=decorate_tasks(my_tasks, interns), admin_tasks=admin_tasks, mentor_subtasks=mentor_subtasks,
+                           total_tasks=len(my_tasks), completed=completed, priorities=PRIORITIES, statuses=STATUSES,
+                           progress=round(completed / len(my_tasks) * 100, 1) if my_tasks else 0)
 
 
 @app.route("/intern/dashboard")
@@ -629,6 +641,25 @@ def intern_dashboard():
     summary = intern_summary(intern, tasks, role="intern")
     mentor = next((m for m in mentors if m.get("id") == intern.get("assigned_mentor")), None)
     return render_template("intern_dashboard.html", intern=summary, mentor=mentor)
+
+
+@app.route("/intern/mentor-tasks")
+def intern_mentor_tasks():
+    if not role_required("intern"):
+        flash("Intern access is required.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    user = current_user()
+    intern_id = user.get("intern_id")
+    parent_titles = {t.get("id"): t.get("title", "") for t in tasks}
+    mentor_tasks = []
+    for task in tasks:
+        assigned = task.get("assigned_intern_ids") or [task.get("intern_id")]
+        if intern_id in assigned and task.get("created_by_role") == "mentor":
+            row = {**task, "parent_task_title": task.get("parent_task_title") or parent_titles.get(task.get("parent_task_id"), ""),
+                   "view_status": task_status_for_role(task, "intern"), "overdue": is_overdue(task)}
+            mentor_tasks.append(row)
+    return render_template("intern_mentor_tasks.html", mentor_tasks=mentor_tasks)
 
 
 @app.route("/interns")
@@ -910,18 +941,21 @@ def assign_task():
         if task_type == "Individual Work":
             selected_ids = [intern_id]
         department = request.form.get("department", "").strip()
-        manual_task_id = task_id_for_department(department, tasks)
         project_id = request.form.get("project_id", "").strip()
         title = request.form.get("title", "").strip()
+        start_date = request.form.get("start_date", "").strip()
+        parent_project = None
         if role_required("mentor") and project_id:
-            project = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
-            if project:
-                title = project.get("title", "").strip()
+            parent_project = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
+            if parent_project and not department:
+                department = parent_project.get("department", "")
+        manual_task_id = task_id_for_department(department, tasks)
         task = {"id": manual_task_id, "intern_id": selected_ids[0] if selected_ids else "",
                 "task_type": task_type,
                 "department": department,
                 "title": title,
                 "description": request.form.get("description", "").strip(),
+                "start_date": start_date,
                 "deadline": request.form.get("deadline", ""),
                 "priority": request.form.get("priority", "Medium"),
                 "status": normalize_task_status(request.form.get("status", "Start")),
@@ -929,7 +963,9 @@ def assign_task():
                 "mentor_status": normalize_task_status(request.form.get("status", "Start")),
                 "mentor_pending_status": None,
                 "mentor_pending": False,
-                "created_by_role": current_user().get("role")}
+                "created_by_role": current_user().get("role"),
+                "parent_task_id": project_id if role_required("mentor") else None,
+                "parent_task_title": parent_project.get("title", "") if parent_project else ""}
         valid_ids = {item.get("id") for item in interns}
         if not manual_task_id:
             flash("Select a valid department to generate the Task ID.", "danger")
@@ -939,8 +975,8 @@ def assign_task():
             flash("Choose an admin-created project before assigning work.", "danger")
         elif task_type not in ("Individual Work", "Team Work"):
             flash("Select a valid task type.", "danger")
-        elif not department or not selected_ids or not task["title"] or not task["deadline"]:
-            flash("Select a department and at least one intern, then provide a title and deadline.", "danger")
+        elif not department or not selected_ids or not task["title"] or not task["start_date"] or not task["deadline"]:
+            flash("Select a department and at least one intern, then provide a title, starting date, and deadline.", "danger")
         elif any(item not in valid_ids for item in selected_ids):
             flash("You cannot assign a task to that intern.", "danger")
         elif any(next((i.get("department") for i in interns if i.get("id") == item), "") != department for item in selected_ids):
@@ -996,13 +1032,18 @@ def edit_task(task_id):
             selected_ids = [request.form.get("intern_id", "").strip()]
         department = request.form.get("department", "").strip()
         project_id = request.form.get("project_id", "").strip()
-        if role_required("mentor") and project_id:
-            project = next((p for p in tasks if p.get("id") == project_id), None)
+        if role_required("mentor"):
+            project = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
             if project:
-                task["title"] = project.get("title", "").strip()
+                task["parent_task_id"] = project_id
+                task["parent_task_title"] = project.get("title", "")
+                if not department:
+                    department = project.get("department", "")
+            task["title"] = request.form.get("title", "").strip()
         else:
             task["title"] = request.form.get("title", "").strip()
         task["description"] = request.form.get("description", "").strip()
+        task["start_date"] = request.form.get("start_date", "").strip()
         task["deadline"] = request.form.get("deadline", "").strip()
         task["priority"] = request.form.get("priority", "Medium").strip()
         requested_status = normalize_task_status(request.form.get("status", "Start").strip())

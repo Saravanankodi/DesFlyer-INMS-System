@@ -58,7 +58,7 @@
         {% if task %}{% for intern_id in task.assigned_intern_ids %}<input type="hidden" name="selected_intern_ids" value="{{ intern_id }}">{% endfor %}{% endif %}
       </div>
 
-      <div class="col-12"><label class="form-label">Task Description</label><textarea class="form-control" name="description" rows="3" placeholder="What needs to be delivered?">{{ task.description if task else '' }}</textarea></div>
+      <div class="col-12"><label class="form-label">Task Description</label><textarea class="form-control" name="description" rows="5" placeholder="What needs to be delivered?">{{ task.description if task else '' }}</textarea></div>
       <div class="col-md-4"><label class="form-label">Deadline</label><input class="form-control" type="date" name="deadline" value="{{ task.deadline if task else '' }}" required></div>
       <div class="col-md-4"><label class="form-label">Priority</label><select class="form-select" name="priority">{% for priority in priorities %}<option {{ 'selected' if task and task.priority == priority else '' }}>{{ priority }}</option>{% endfor %}</select></div>
       <div class="col-md-4"><label class="form-label">Status</label><select class="form-select" name="status">{% for status in statuses %}<option {{ 'selected' if task and task.status == status else '' }}>{{ status }}</option>{% endfor %}</select></div>

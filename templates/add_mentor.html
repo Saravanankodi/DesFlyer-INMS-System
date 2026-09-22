@@ -13,11 +13,17 @@
         <div class="col-md-6"><label class="form-label">Mentor Name</label><input class="form-control" name="name" value="{{ mentor.name if mentor else '' }}" required></div>
         <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="{{ mentor.email if mentor else '' }}" required></div>
         <div class="col-md-6"><label class="form-label">Phone Number</label><input class="form-control" type="tel" name="phone" value="{{ mentor.phone if mentor else '' }}" required></div>
-        <div class="col-md-6"><label class="form-label">Department</label>
-          <select class="form-select" name="department" required>
-            <option value="">Select department</option>
-            {% for department in departments %}<option value="{{ department }}" {{ 'selected' if mentor and mentor.department == department else '' }}>{{ department }}</option>{% endfor %}
-          </select>
+        <div class="col-md-6"><label class="form-label">Departments</label>
+          {% set selected_departments = mentor.departments if mentor and mentor.departments is defined else ([mentor.department] if mentor and mentor.department else []) %}
+          <div class="mentor-department-checklist" role="group" aria-describedby="mentorDepartmentHelp">
+            {% for department in departments %}
+            <label class="mentor-department-option">
+              <input class="form-check-input" type="checkbox" name="departments" value="{{ department }}" {{ 'checked' if department in selected_departments else '' }}>
+              <span>{{ department }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <div id="mentorDepartmentHelp" class="form-text">Select one or more departments.</div>
         </div>
         <div class="col-md-6"><label class="form-label">Document</label><input class="form-control" type="file" name="document"></div>
       </div>

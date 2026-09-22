@@ -2,7 +2,15 @@
 {% block title %}Mentor Assign Task{% endblock %}
 {% block content %}
 <div class="page-heading"><div><span class="eyebrow">Mentor allocation</span><h1>Mentor Assign Task</h1><p class="text-muted">Subtasks assigned to you by your mentor.</p></div></div>
-<div class="card table-card"><div class="table-scroll mentor-intern-task-scroll"><table class="table align-middle mb-0"><thead><tr><th>Subtask</th><th>Parent Task</th><th>Description</th><th>Start Date</th><th>Deadline</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-{% for task in mentor_tasks %}<tr><td><strong>{{ task.title }}</strong></td><td>{{ task.parent_task_title or '—' }}</td><td>{{ task.description|truncate(90) }}</td><td>{{ task.start_date or '—' }}</td><td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td><td class="table-actions"><a class="btn btn-sm btn-light icon-action" title="View subtask" aria-label="View subtask" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>
-{% else %}<tr><td colspan="8" class="empty-state">No subtasks have been assigned by your mentor yet.</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="card table-card"><div class="table-scroll mentor-intern-task-scroll"><table class="table align-middle mb-0"><thead><tr><th>Subtask</th><th>Parent Task</th><th>Description</th><th>Start Date</th><th>Deadline</th><th>Priority</th><th>Status</th><th>Project ZIP</th><th>Actions</th></tr></thead><tbody>
+{% for task in mentor_tasks %}<tr><td><strong>{{ task.title }}</strong></td><td>{{ task.parent_task_title or '—' }}</td><td>{{ task.description|truncate(90) }}</td><td>{{ task.start_date or '—' }}</td><td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td><td>
+  <div class="project-actions">
+    {% if task.intern_project_file %}<a class="btn btn-sm btn-light" href="{{ url_for('download_project', task_id=task.id) }}" title="Download my ZIP"><i class="bi bi-file-earmark-zip"></i> Download</a>{% endif %}
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_project', task_id=task.id) }}" class="project-upload-form">
+      <input class="form-control form-control-sm" type="file" name="project_file" accept=".zip" required>
+      <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-upload"></i> {{ 'Replace ZIP' if task.intern_project_file else 'Upload ZIP' }}</button>
+    </form>
+  </div>
+</td><td class="table-actions"><a class="btn btn-sm btn-light icon-action" title="View full project submission" aria-label="View full project submission" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>
+{% else %}<tr><td colspan="9" class="empty-state">No subtasks have been assigned by your mentor yet.</td></tr>{% endfor %}</tbody></table></div></div>
 {% endblock %}

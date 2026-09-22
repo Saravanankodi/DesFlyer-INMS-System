@@ -13,7 +13,7 @@
     <div class="card-body p-4 p-lg-5">
       <div class="login-brand"><img src="{{ url_for('static', filename='images/desflyer-logo.png') }}" alt="DesFlyer logo"></div>
       <div class="eyebrow text-center login-system-name">IMS - Internship Management System</div>
-      <h1 class="login-title">Welcome back</h1>
+      <h1 class="login-title">WELCOME BACK</h1>
       <p class="login-subtitle">Sign in to continue to your workspace.</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -23,11 +23,11 @@
       {% endwith %}
 
       <form method="post" class="login-form">
-        <label class="form-label login-label">Login as</label>
+        <label class="form-label login-label text-center d-block login-role-heading">LOGIN</label>
         <div class="login-role-group mb-4" aria-label="Choose your role">
-          <label class="role-option"><input type="radio" name="role" value="admin" required><span><i class="bi bi-shield-lock" aria-hidden="true"></i><strong>Admin</strong><small>Manage the workspace</small></span></label>
-          <label class="role-option"><input type="radio" name="role" value="mentor"><span><i class="bi bi-person-workspace" aria-hidden="true"></i><strong>Mentor</strong><small>Guide your interns</small></span></label>
-          <label class="role-option"><input type="radio" name="role" value="intern"><span><i class="bi bi-person" aria-hidden="true"></i><strong>Intern</strong><small>Track your progress</small></span></label>
+          <label class="role-option"><input type="radio" name="role" value="admin" required><span><i class="bi bi-shield-lock role-icon" aria-hidden="true"></i><strong>Admin</strong><small>Manage the workspace</small></span></label>
+          <label class="role-option"><input type="radio" name="role" value="mentor"><span><i class="bi bi-person-badge role-icon" aria-hidden="true"></i><strong>Mentor</strong><small>Guide your interns</small></span></label>
+          <label class="role-option"><input type="radio" name="role" value="intern"><span><i class="bi bi-person role-icon" aria-hidden="true"></i><strong>Intern</strong><small>Track your progress</small></span></label>
         </div>
 
         <div class="mb-4">

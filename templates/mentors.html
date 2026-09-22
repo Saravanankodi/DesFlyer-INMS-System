@@ -16,12 +16,12 @@
 </div>
 <div class="card table-card">
   <div class="table-scroll">
-    <table class="table align-middle mb-0"><thead><tr><th>Mentor ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Department</th><th>Interns</th><th>Document</th><th class="table-actions">Actions</th></tr></thead>
+    <table class="table align-middle mb-0"><thead><tr><th>Mentor ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Departments</th><th>Interns</th><th>Document</th><th class="table-actions">Actions</th></tr></thead>
     <tbody>
     {% for mentor in mentors %}
-    <tr class="mentor-row" data-search="{{ mentor.id|lower }} {{ mentor.name|lower }} {{ mentor.email|lower }}" data-department="{{ mentor.department|lower }}">
+    <tr class="mentor-row" data-search="{{ mentor.id|lower }} {{ mentor.name|lower }} {{ mentor.email|lower }}" data-department="{{ mentor.departments|join("|")|lower }}">
       <td>{{ mentor.id }}</td><td><strong>{{ mentor.name }}</strong></td><td>{{ mentor.email }}</td><td>{{ mentor.phone }}</td>
-      <td><span class="badge department-badge">{{ mentor.department or 'Not set' }}</span></td><td>{{ mentor.assigned_count }}</td>
+      <td>{% for department in mentor.departments %}<span class="badge department-badge me-1 mb-1">{{ department }}</span>{% else %}<span class="text-muted">Not set</span>{% endfor %}</td><td>{{ mentor.assigned_count }}</td>
       <td>{% if mentor.document %}<a class="btn btn-sm btn-light icon-action" title="Download document" aria-label="Download document" href="{{ url_for('download_document', kind='mentor', item_id=mentor.id) }}"><i class="bi bi-file-earmark-arrow-down"></i></a>{% else %}<span class="text-muted">Not uploaded</span>{% endif %}</td>
       <td class="table-actions text-nowrap"><a class="btn btn-sm btn-light" href="{{ url_for('edit_mentor', mentor_id=mentor.id) }}"><i class="bi bi-pencil"></i></a>
       <form class="d-inline" method="post" action="{{ url_for('delete_mentor', mentor_id=mentor.id) }}" onsubmit="return confirm('Delete this mentor?')"><button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash3"></i></button></form></td>
@@ -33,7 +33,7 @@
 </div>
 <script>
 const mentorRows=[...document.querySelectorAll(".mentor-row")], mentorSearch=document.getElementById("mentorSearch"), mentorDepartment=document.getElementById("mentorDepartment");
-function filterMentors(){const q=mentorSearch.value.trim().toLowerCase(),d=mentorDepartment.value;let n=0;mentorRows.forEach(r=>{const ok=(!q||r.dataset.search.includes(q))&&(!d||r.dataset.department===d);r.classList.toggle("d-none",!ok);if(ok)n++});document.getElementById("noMentorMatches").classList.toggle("d-none",n!==0)}
+function filterMentors(){const q=mentorSearch.value.trim().toLowerCase(),d=mentorDepartment.value;let n=0;mentorRows.forEach(r=>{const ok=(!q||r.dataset.search.includes(q))&&(!d||r.dataset.department.split("|").includes(d));r.classList.toggle("d-none",!ok);if(ok)n++});document.getElementById("noMentorMatches").classList.toggle("d-none",n!==0)}
 [mentorSearch,mentorDepartment].forEach(e=>e.addEventListener("input",filterMentors));
 document.getElementById("clearMentorFilters").addEventListener("click",()=>{mentorSearch.value="";mentorDepartment.value="";filterMentors()});
 </script>

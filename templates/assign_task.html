@@ -10,14 +10,14 @@
 <form method="post" class="card form-card wide-form-card compact-form-card">
   <div class="card-body p-4 p-lg-4">
     <div class="row g-3">
-      <div class="col-md-3"><label class="form-label">Task ID</label><input class="form-control task-id-field" id="taskId" name="task_id" value="{{ task.id if task else '' }}" placeholder="Select a department" readonly></div>
-      <div class="col-md-3"><label class="form-label">Task Type</label>
+      <div class="{{ 'col-md-3' if current_user.role == 'mentor' else 'col-md-4' }}"><label class="form-label">Task ID</label><input class="form-control task-id-field" id="taskId" name="task_id" value="{{ task.id if task else '' }}" placeholder="Select a department" readonly></div>
+      <div class="{{ 'col-md-3' if current_user.role == 'mentor' else 'col-md-4' }}"><label class="form-label">Task Type</label>
         <select class="form-select" id="taskType" name="task_type" required>
           <option value="Individual Work" {{ 'selected' if not task or task.task_type == 'Individual Work' else '' }}>Individual Work</option>
           <option value="Team Work" {{ 'selected' if task and task.task_type == 'Team Work' else '' }}>Team Work</option>
         </select>
       </div>
-      <div class="col-md-3"><label class="form-label">Department</label>
+      <div class="{{ 'col-md-3' if current_user.role == 'mentor' else 'col-md-4' }}"><label class="form-label">Department</label>
         <select class="form-select" id="taskDepartment" name="department" required>
           <option value="">Select department</option>
           {% set current_department = task.department if task and task.department else '' %}
@@ -33,7 +33,7 @@
         <select class="form-select" id="projectSelect" name="project_id" required>
           <option value="">Select an admin task</option>
           {% for project in projects %}
-          <option value="{{ project.id }}" data-title="{{ project.title|e }}" data-department="{{ project.department|e }}" {{ 'selected' if task and task.parent_task_id == project.id else '' }}>{{ project.title }} · {{ project.id }}</option>
+          <option value="{{ project.id }}" data-title="{{ project.title|e }}" data-department="{{ project.department|e }}" data-task-type="{{ project.task_type or 'Individual Work' }}" data-intern-ids="{{ (project.assigned_intern_ids or [project.intern_id])|join(',') }}" data-next-id="{{ project_subtask_ids.get(project.id, project.id ~ '-01') }}" {{ 'selected' if task and task.parent_task_id == project.id else '' }}>{{ project.title }} · {{ project.id }}</option>
           {% endfor %}
         </select>
       </div>
@@ -42,6 +42,17 @@
       <div class="col-md-6" id="titleWrap"><label class="form-label">{{ 'Subtask Title' if current_user.role == 'mentor' else 'Task Title' }}</label>
         <input class="form-control" id="taskTitle" name="title" value="{{ task.title if task else '' }}" placeholder="{{ 'Enter the subtask assigned by you' if current_user.role == 'mentor' else 'Enter task title' }}" required>
       </div>
+
+      {% if current_user.role == 'admin' %}
+      <div class="col-md-6" id="mentorPicker"><label class="form-label">Select Mentor</label>
+        <select class="form-select" name="assigned_mentor" id="assignedMentor" required>
+          <option value="">Choose a mentor</option>
+          {% for mentor in mentors %}
+          <option value="{{ mentor.id }}" {{ 'selected' if task and task.assigned_mentor == mentor.id else '' }}>{{ mentor.name }} · {{ mentor.id }}{% if mentor.departments %} · {{ mentor.departments|join(', ') }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
 
       <div class="col-md-6" id="individualPicker"><label class="form-label">Select Intern</label>
         <select class="form-select" name="intern_id" id="individualIntern">
@@ -104,6 +115,11 @@ function filterPeopleByDepartment(){
 }
 function updateTaskId(){
   if (!taskId || taskId.hasAttribute("data-existing")) return;
+  if(projectSelect){
+    const projectOption=projectSelect.options[projectSelect.selectedIndex];
+    taskId.value=projectOption ? projectOption.dataset.nextId || "" : "";
+    return;
+  }
   const option=taskDepartment.options[taskDepartment.selectedIndex];
   taskId.value=option ? option.dataset.taskId || "" : "";
 }
@@ -128,14 +144,47 @@ document.getElementById("applyTeamMembers").addEventListener("click",syncTeamMem
 document.getElementById("selectAllMembers").addEventListener("click",()=>{checkboxes.forEach(b=>{if(!b.closest(".team-member-option").classList.contains("d-none"))b.checked=true});syncTeamMembers()});
 document.getElementById("clearMembers").addEventListener("click",()=>{checkboxes.forEach(b=>b.checked=false);syncTeamMembers()});
 document.getElementById("teamMemberSearch").addEventListener("input",e=>{const q=e.target.value.toLowerCase();document.querySelectorAll(".team-member-option").forEach(row=>row.classList.toggle("d-none",!row.dataset.search.toLowerCase().includes(q)))});
+function applyProjectDefaults(){
+  if(!projectSelect) return;
+  const option=projectSelect.options[projectSelect.selectedIndex];
+  if(!option || !option.value) return;
+
+  // The parent Admin task is the source of truth for mentor subtasks.
+  if(option.dataset.taskType){
+    taskType.value=option.dataset.taskType;
+  }
+  if(option.dataset.department){
+    taskDepartment.value=option.dataset.department;
+  }
+
+  const parentInternIds=(option.dataset.internIds || "").split(",").map(v=>v.trim()).filter(Boolean);
+  if(taskType.value === "Individual Work") {
+    const target=parentInternIds[0] || "";
+    individualIntern.value=target;
+  } else {
+    checkboxes.forEach(box=>{
+      box.checked=parentInternIds.includes(box.value);
+    });
+  }
+
+  filterPeopleByDepartment();
+  // filterPeopleByDepartment may clear hidden team members. Re-apply the exact
+  // Admin team after the department is known.
+  if(taskType.value === "Team Work") {
+    checkboxes.forEach(box=>{
+      box.checked=parentInternIds.includes(box.value);
+    });
+    syncTeamMembers();
+  }
+  syncTaskType();
+  updateTaskId();
+}
+
 if(projectSelect){
-  projectSelect.addEventListener("change",()=>{
-    const option=projectSelect.options[projectSelect.selectedIndex];
-    if(option && option.dataset.department && !taskDepartment.value){ taskDepartment.value=option.dataset.department; filterPeopleByDepartment(); updateTaskId(); }
-  });
+  projectSelect.addEventListener("change",applyProjectDefaults);
 }
 {% if task %}taskId.setAttribute("data-existing", "true");{% endif %}
 syncTeamMembers(); syncTaskType(); filterPeopleByDepartment(); updateTaskId();
-if(projectSelect && projectSelect.value) projectSelect.dispatchEvent(new Event("change"));
+if(projectSelect && projectSelect.value) applyProjectDefaults();
 </script>
 {% endblock %}

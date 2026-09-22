@@ -32,9 +32,22 @@
         <td>{{ intern.latest_completed_task }}</td>
         <td class="text-end text-nowrap">
           <a class="btn btn-sm btn-light" href="{{ url_for('download_report', intern_id=intern.id) }}" title="Download individual PDF"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
-          <details class="report-details d-inline-block ms-1"><summary class="btn btn-sm btn-light">View</summary>
-            <div class="report-popover"><strong>{{ intern.name }}'s tasks</strong>{% for task in intern.tasks %}<div class="report-task-line"><span>{{ task.title }}</span><span class="status status-{{ task.status|lower|replace(' ', '-') }}">{{ task.status }}</span></div>{% else %}<small class="text-muted">No tasks assigned.</small>{% endfor %}</div>
-          </details>
+          <button class="btn btn-sm btn-light ms-1" type="button" data-bs-toggle="modal" data-bs-target="#reportModal{{ loop.index }}">View</button>
+          <div class="modal fade" id="reportModal{{ loop.index }}" tabindex="-1" aria-labelledby="reportModalLabel{{ loop.index }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"><div class="modal-content">
+              <div class="modal-header"><div><span class="eyebrow">Task details</span><h2 class="modal-title h5 mb-0" id="reportModalLabel{{ loop.index }}">{{ intern.name }}'s progress report</h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+              <div class="modal-body">
+              {% for task in intern.tasks %}
+                <div class="report-detail-item">
+                  <div class="d-flex justify-content-between align-items-start gap-3"><div><h3 class="h6 mb-1">{{ task.title }}</h3><small class="text-muted">Task ID: {{ task.id }}{% if task.parent_task_id %} · Parent: {{ task.parent_task_id }}{% endif %}</small></div><span class="status status-{{ task.status|lower|replace(' ', '-') }}">{{ task.status }}</span></div>
+                  <p class="mb-2 mt-2">{{ task.description or 'No description provided.' }}</p>
+                  <div class="report-detail-meta"><span><b>Deadline:</b> {{ task.deadline_display }}</span><span><b>Priority:</b> {{ task.priority }}</span><span><b>Department:</b> {{ task.department or 'Not set' }}</span></div>
+                </div>
+              {% else %}<div class="empty-state">No tasks assigned.</div>{% endfor %}
+              </div>
+              <div class="modal-footer"><a class="btn btn-primary" href="{{ url_for('download_report', intern_id=intern.id) }}"><i class="bi bi-file-earmark-pdf"></i> Download PDF</a></div>
+            </div></div>
+          </div>
         </td>
       </tr>
       {% endfor %}

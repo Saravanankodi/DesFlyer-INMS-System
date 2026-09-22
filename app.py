@@ -134,6 +134,13 @@ def task_id_for_department(department, tasks):
     return f"{base_id}{max(sequence_numbers, default=0) + 1:02d}"
 
 
+def format_task_date(value):
+    try:
+        return date.fromisoformat(str(value)).strftime("%d-%m-%y")
+    except (TypeError, ValueError):
+        return value or "—"
+
+
 def notification_timestamp():
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -308,6 +315,7 @@ def is_overdue(task):
 
 def intern_summary(intern, tasks, role="admin"):
     assigned = [{**task, "overdue": is_overdue(task),
+                 "deadline_display": format_task_date(task.get("deadline")),
                  "view_status": task_status_for_role(task, role)} for task in tasks
                 if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])]
     completed = sum(task["view_status"] == "Completed" for task in assigned)
@@ -339,7 +347,9 @@ def decorate_tasks(tasks, interns):
         decorated.append({**task, "task_type": task.get("task_type", "Individual Work"),
                           "assigned_intern_ids": assigned_ids,
                           "assigned_names": assigned_names,
+                          "assigned_count": len(assigned_ids),
                           "intern_name": ", ".join(assigned_names),
+                          "deadline_display": format_task_date(task.get("deadline")),
                           "department": task_department(task, interns),
                           "overdue": is_overdue(task),
                           "view_status": task_status_for_role(task, current_user().get("role") if current_user() else "admin"),
@@ -656,8 +666,13 @@ def intern_mentor_tasks():
     for task in tasks:
         assigned = task.get("assigned_intern_ids") or [task.get("intern_id")]
         if intern_id in assigned and task.get("created_by_role") == "mentor":
-            row = {**task, "parent_task_title": task.get("parent_task_title") or parent_titles.get(task.get("parent_task_id"), ""),
-                   "view_status": task_status_for_role(task, "intern"), "overdue": is_overdue(task)}
+            row = {
+                **task,
+                "parent_task_title": task.get("parent_task_title") or parent_titles.get(task.get("parent_task_id"), ""),
+                "deadline_display": format_task_date(task.get("deadline")),
+                "view_status": task_status_for_role(task, "intern"),
+                "overdue": is_overdue(task),
+            }
             mentor_tasks.append(row)
     return render_template("intern_mentor_tasks.html", mentor_tasks=mentor_tasks)
 
@@ -678,6 +693,27 @@ def view_interns():
     enriched.sort(key=lambda item: (0 if item.get("employment_status") == "Active Intern" else 1,
                                     item.get("end_date") or "9999-12-31", item.get("name", "").casefold()))
     return render_template("interns.html", interns=enriched, departments=available_departments(interns, mentors))
+
+
+@app.get("/interns/<intern_id>")
+def view_intern_profile(intern_id):
+    if not role_required("admin", "mentor"):
+        flash("You do not have permission to view intern profiles.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, mentors = get_data()
+    intern = next((item for item in interns if item.get("id") == intern_id), None)
+    if not intern:
+        flash("Intern not found.", "danger")
+        return redirect(url_for("view_interns"))
+    if role_required("mentor") and intern_id not in mentor_intern_ids(current_user(), interns):
+        flash("You cannot view this intern profile.", "danger")
+        return redirect(url_for("view_interns"))
+    summary = intern_summary(intern, tasks, role=current_user().get("role", "admin"))
+    mentor = next((item for item in mentors if item.get("id") == intern.get("assigned_mentor")), None)
+    assigned_tasks = summary["tasks"]
+    return render_template("intern_profile.html", intern=summary, mentor=mentor,
+                           assigned_tasks=assigned_tasks,
+                           pending_tasks=summary["total_tasks"] - summary["completed_tasks"])
 
 
 @app.route("/interns/add", methods=["GET", "POST"])
@@ -1187,16 +1223,51 @@ def reports():
         ids = mentor_intern_ids(current_user(), interns)
         enriched = [i for i in enriched if i.get("id") in ids]
     intern_rows = [intern_summary(i, tasks) for i in enriched]
+    for intern_row in intern_rows:
+        report_statuses = set()
+        for task in intern_row.get("tasks", []):
+            status = normalize_task_status(task.get("view_status", task.get("status", "Start")))
+            if status == "In Progress":
+                report_statuses.add("in-progress")
+            elif status == "Completed":
+                report_statuses.add("completed")
+            if task.get("overdue"):
+                report_statuses.add("overdue")
+        intern_row["report_statuses"] = sorted(report_statuses)
     mentor_rows = []
     for mentor in mentors:
         if role_required("mentor") and mentor.get("id") != current_user().get("mentor_id"):
             continue
         mentor_interns = [i for i in interns if i.get("assigned_mentor") == mentor.get("id")]
+        mentor_intern_ids_set = {intern.get("id") for intern in mentor_interns}
+        mentor_tasks = [task for task in tasks
+                        if mentor_intern_ids_set.intersection(
+                            task.get("assigned_intern_ids") or [task.get("intern_id")])]
+        mentor_task_statuses = [normalize_task_status(task.get("status", "Start"))
+                                for task in mentor_tasks]
+        mentor_total_tasks = len(mentor_task_statuses)
+        mentor_completed_tasks = mentor_task_statuses.count("Completed")
+        mentor_in_progress_tasks = mentor_task_statuses.count("In Progress")
+        mentor_pending_tasks = sum(status in {"Start", "Not Completed"}
+                                   for status in mentor_task_statuses)
+        mentor_report_statuses = set()
+        for task, status in zip(mentor_tasks, mentor_task_statuses):
+            if status == "In Progress":
+                mentor_report_statuses.add("in-progress")
+            elif status == "Completed":
+                mentor_report_statuses.add("completed")
+            if is_overdue(task):
+                mentor_report_statuses.add("overdue")
         mentor_rows.append({
             **mentor,
             "assigned_count": len(mentor_interns),
-            "total_tasks": sum(intern_summary(i, tasks).get("total_tasks", 0) for i in mentor_interns),
-            "completed_tasks": sum(intern_summary(i, tasks).get("completed_tasks", 0) for i in mentor_interns),
+            "total_tasks": mentor_total_tasks,
+            "completed_tasks": mentor_completed_tasks,
+            "in_progress_tasks": mentor_in_progress_tasks,
+            "pending_tasks": mentor_pending_tasks,
+            "report_statuses": sorted(mentor_report_statuses),
+            "progress": round(mentor_completed_tasks / mentor_total_tasks * 100, 1)
+            if mentor_total_tasks else 0,
         })
     return render_template("report.html", interns=intern_rows, mentors=mentor_rows,
                            departments=available_departments(interns, mentors))

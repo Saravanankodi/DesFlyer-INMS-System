@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Intern Profile{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">People directory</span>
+    <h1>{{ intern.name }}</h1>
+    <p class="text-muted">Detailed intern profile and assigned task progress.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('view_interns') }}"><i class="bi bi-arrow-left"></i> Back to interns</a>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <section class="card h-100">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="avatar">{{ intern.name[:1]|upper }}</div>
+          <div><span class="eyebrow">Intern profile</span><h2 class="h4 mb-0">{{ intern.name }}</h2></div>
+        </div>
+        <dl class="row small mb-0">
+          <dt class="col-sm-4 text-muted">Intern ID</dt><dd class="col-sm-8">{{ intern.id }}</dd>
+          <dt class="col-sm-4 text-muted">Intern Name</dt><dd class="col-sm-8">{{ intern.name }}</dd>
+          <dt class="col-sm-4 text-muted">Email</dt><dd class="col-sm-8">{{ intern.email }}</dd>
+          <dt class="col-sm-4 text-muted">Phone Number</dt><dd class="col-sm-8">{{ intern.phone }}</dd>
+          <dt class="col-sm-4 text-muted">Department</dt><dd class="col-sm-8">{{ intern.department }}</dd>
+          <dt class="col-sm-4 text-muted">Mentor</dt><dd class="col-sm-8">{{ mentor.name if mentor else 'Unassigned' }}</dd>
+          <dt class="col-sm-4 text-muted">Duration</dt><dd class="col-sm-8">{{ intern.duration_months }} months</dd>
+          <dt class="col-sm-4 text-muted">Start Date</dt><dd class="col-sm-8">{{ intern.joining_date }}</dd>
+          <dt class="col-sm-4 text-muted">End Date</dt><dd class="col-sm-8">{{ intern.end_date or 'Not set' }}</dd>
+          <dt class="col-sm-4 text-muted">Status</dt><dd class="col-sm-8"><span class="badge {{ 'status-active' if intern.employment_status == 'Active Intern' else 'status-past' }}">{{ intern.employment_status }}</span></dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+  <div class="col-lg-5">
+    <section class="card h-100">
+      <div class="card-body p-4">
+        <span class="eyebrow">Task summary</span>
+        <div class="row g-3 mt-1">
+          <div class="col-6"><div class="metric-card"><strong>{{ intern.total_tasks }}</strong><span>Total Tasks</span></div></div>
+          <div class="col-6"><div class="metric-card"><strong>{{ intern.completed_tasks }}</strong><span>Completed Tasks</span></div></div>
+          <div class="col-6"><div class="metric-card"><strong>{{ pending_tasks }}</strong><span>Pending Tasks</span></div></div>
+          <div class="col-6"><div class="metric-card"><strong>{{ intern.progress }}%</strong><span>Progress Percentage</span></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="card table-card">
+  <div class="card-body p-4 pb-2"><span class="eyebrow">Assigned work</span><h2 class="h5 mb-1">Assigned Task List</h2></div>
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>Task</th><th>Department</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="text-end">View</th></tr></thead>
+      <tbody>
+      {% for task in assigned_tasks %}
+        <tr>
+          <td><strong>{{ task.title }}</strong><small class="d-block text-muted">{{ task.id }}</small></td>
+          <td>{{ task.department or intern.department }}</td>
+          <td>{{ task.deadline_display }}</td>
+          <td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
+          <td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td>
+          <td class="text-end"><a class="btn btn-sm btn-light" title="View task" aria-label="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty-state">No tasks assigned yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

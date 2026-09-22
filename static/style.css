@@ -49,6 +49,9 @@
 .intern-task-scroll{max-height:58vh}
 .report-table-scroll{max-height:67vh}
 .table-scroll thead th{position:sticky;top:0;z-index:2;background:#fafbfc;box-shadow:0 1px 0 var(--line)}
+.users-table-scroll{height:clamp(260px, 55vh, 560px);overflow-y:auto;overflow-x:auto}
+.users-table-scroll thead th{position:sticky;top:0;z-index:3;background:#fafbfc;box-shadow:0 1px 0 var(--line)}
+.users-table-card{overflow:hidden}
 .latest-task{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:3px}
 .latest-task small{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
 .latest-task strong{font-size:.82rem;line-height:1.35}
@@ -842,6 +845,125 @@ body {
   font-size: .9rem;
 }
 
+.task-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px 18px;
+  align-items: end;
+}
+
+.task-detail-meta > div {
+  min-width: 0;
+}
+
+.task-detail-meta small {
+  margin-bottom: 2px;
+}
+
+.task-detail-download {
+  text-align: right;
+}
+
+.user-management-row {
+  align-items: stretch;
+}
+
+.user-management-row > [class*="col-"] {
+  display: flex;
+}
+
+.users-create-card,
+.users-table-card {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.users-create-card .card-body {
+  width: 100%;
+}
+
+.users-table-card {
+  overflow: hidden;
+}
+
+.users-table-scroll {
+  width: 100%;
+  height: clamp(300px, 55vh, 560px);
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.users-table-scroll table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.users-table-scroll th,
+.users-table-scroll td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.users-table-scroll th:last-child,
+.users-table-scroll td:last-child {
+  width: 150px;
+}
+
+.users-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fafbfc;
+  box-shadow: 0 1px 0 var(--line);
+}
+
+@media (max-width: 991.98px) {
+  .user-management-row > [class*="col-"] {
+    display: block;
+  }
+
+  .users-table-scroll {
+    height: 55vh;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .task-detail-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+  }
+
+  .task-detail-download {
+    text-align: left;
+  }
+}
+
+.task-title-normal {
+  font-weight: 400;
+}
+
+.report-progress-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.report-progress-bar {
+  width: min(230px, 100%);
+  height: 8px;
+  margin: 5px 0;
+}
+
+.report-status-group {
+  flex-wrap: wrap;
+}
+
+.report-status-group .report-status {
+  flex: 1 1 auto;
+}
+
 .intern-form-grid > [class*="col-"] > .form-control,
 .intern-form-grid > [class*="col-"] > .form-select {
   width: 100%;
@@ -911,6 +1033,20 @@ main.container-fluid{flex:1 0 auto;width:100%;}
 .compact-form-card textarea.form-control{min-height:110px;}
 @media(max-width:991.98px){.fixed-form-page{height:calc(100vh - 120px)!important;overflow:hidden!important;}.fixed-form-page .compact-form-card{overflow:auto;max-height:none;}}
 
+/* Let the Assign/Edit Task form expand naturally instead of scrolling inside the card. */
+.task-form-page {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.task-form-page .compact-form-card,
+.task-form-page .wide-form-card {
+  flex: 0 0 auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
 .table th.text-end,.table td.text-end{text-align:center!important;}
 
 /* Typography refinement: match section-label and table-title sizing across Admin, Mentor and Intern pages */
@@ -972,6 +1108,201 @@ main.container-fluid {
 @media (max-width: 991.98px) {
   html, body { height: auto; min-height: 100%; }
   .mentor-intern-task-scroll .table { min-width: 1000px; }
+}
+
+/* Keep displayed table values left-aligned while headers and action controls stay centered. */
+.table tbody td {
+  text-align: left !important;
+}
+
+.table tbody td .d-block {
+  text-align: left !important;
+}
+
+.table .table-actions,
+.table th:last-child,
+.table td:last-child,
+.table td.text-end {
+  text-align: center !important;
+}
+
+/* Improve readability of dashboard summary card values and labels. */
+.metric-card strong {
+  font-size: 2.25rem;
+}
+
+.metric-card span {
+  font-size: .95rem;
+}
+
+/* Shared Dashboard typography for page titles and major section headings. */
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: -.7px;
+  text-transform: uppercase;
+}
+
+.eyebrow,
+.table thead th,
+.form-label {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+.table thead th,
+.eyebrow {
+  font-weight: 700;
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.table tbody td,
+.table tbody td strong,
+.table tbody td b,
+.card dl dd,
+.task-detail-meta strong,
+.intern-card strong,
+.latest-task strong,
+.notification-item strong,
+.user-info span {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Keep every table header and displayed value left-aligned. */
+.table thead th,
+.table tbody td,
+.table .table-actions,
+.table th:last-child,
+.table td:last-child,
+.table td.text-end {
+  text-align: left !important;
+}
+
+/* Users table: natural content height with vertical scrolling only when needed. */
+.user-management-row {
+  align-items: flex-start;
+}
+
+.user-management-row > [class*="col-"] {
+  display: block;
+}
+
+.users-create-card,
+.users-table-card {
+  display: block;
+  height: auto;
+  min-height: 0;
+}
+
+.users-table-scroll {
+  height: auto !important;
+  max-height: min(560px, calc(100vh - 260px));
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.users-table-scroll table {
+  margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+  .users-table-scroll {
+    max-height: 55vh;
+  }
+}
+
+/* Final Users layout: equal cards, complete wrapped data, vertical table scroll only. */
+@media (min-width: 992px) {
+  .user-management-row {
+    align-items: stretch;
+  }
+
+  .user-management-row > [class*="col-"] {
+    display: flex;
+  }
+
+  .users-create-card,
+  .users-table-card {
+    display: flex;
+    flex: 1 1 auto;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .users-table-scroll {
+    flex: 1 1 auto;
+    height: auto !important;
+    max-height: 520px;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+}
+
+.users-table-scroll table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.users-table-scroll th,
+.users-table-scroll td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.users-table-scroll th:last-child,
+.users-table-scroll td:last-child {
+  width: 135px;
+}
+
+/* Add Intern and Add Mentor forms: compact two-column content layout. */
+.people-form-page {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.people-form-page .compact-form-card {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.people-form-page .row {
+  row-gap: 14px !important;
+}
+
+.people-form-page .document-upload-row {
+  min-height: 42px;
+}
+
+@media (max-width: 991.98px) {
+  .user-management-row > [class*="col-"] {
+    display: block;
+  }
+
+  .users-create-card,
+  .users-table-card {
+    height: auto;
+  }
+
+  .users-table-scroll {
+    height: auto !important;
+    max-height: 55vh;
+  }
 }
 
 /* Login page: fixed viewport and visible transparent logo */

@@ -11,7 +11,7 @@
     <div class="row g-3 align-items-end">
       <div class="col-lg-5"><label class="form-label">Search report</label><input id="reportSearch" class="form-control" type="search" placeholder="Search by name" autocomplete="off"></div>
       <div class="col-lg-4"><label class="form-label">Department</label><select id="reportDepartment" class="form-select"><option value="">All departments</option>{% for d in departments %}<option value="{{ d|lower }}">{{ d }}</option>{% endfor %}</select></div>
-      <div class="col-lg-3"><label class="form-label d-block">Show</label><div class="btn-group w-100" role="group"><button type="button" class="btn btn-outline-secondary report-role active" data-role="all">All</button><button type="button" class="btn btn-outline-secondary report-role" data-role="intern">Interns</button><button type="button" class="btn btn-outline-secondary report-role" data-role="mentor">Mentors</button></div></div>
+      <div class="col-lg-3"><label class="form-label" for="reportStatus">Task Status</label><select id="reportStatus" class="form-select"><option value="all">All</option><option value="in-progress">In Progress</option><option value="completed">Completed</option><option value="overdue">Overdue</option></select></div>
     </div>
   </div>
 </div>
@@ -22,10 +22,13 @@
       <thead><tr><th>Person</th><th>Role</th><th>Department</th><th>Progress / Workload</th><th>Latest completed task</th><th class="text-end">Report</th></tr></thead>
       <tbody>
       {% for intern in interns %}
-      <tr class="report-row" data-role="intern" data-name="{{ intern.name|lower }}" data-department="{{ intern.department|lower }}">
+      <tr class="report-row" data-status="{{ intern.report_statuses|join(' ') }}" data-name="{{ intern.name|lower }}" data-department="{{ intern.department|lower }}">
         <td><strong>{{ intern.name }}</strong><small class="d-block text-muted">ID {{ intern.id }} · Mentor: {{ intern.mentor_name }}</small></td>
         <td><span class="user-role intern">INTERN</span></td><td>{{ intern.department }}</td>
-        <td><strong>{{ intern.progress }}%</strong><small class="d-block text-muted">{{ intern.completed_tasks }}/{{ intern.total_tasks }} tasks completed</small></td>
+        <td>
+          <div class="report-progress-value"><strong>{{ intern.progress }}%</strong><span class="text-muted">{{ intern.completed_tasks }}/{{ intern.total_tasks }} completed</span></div>
+          <div class="progress report-progress-bar" role="progressbar" aria-label="{{ intern.name }} progress" aria-valuenow="{{ intern.progress }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ intern.progress }}%"></div></div>
+        </td>
         <td>{{ intern.latest_completed_task }}</td>
         <td class="text-end text-nowrap">
           <a class="btn btn-sm btn-light" href="{{ url_for('download_report', intern_id=intern.id) }}" title="Download individual PDF"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
@@ -37,10 +40,14 @@
       {% endfor %}
 
       {% for mentor in mentors %}
-      <tr class="report-row" data-role="mentor" data-name="{{ mentor.name|lower }}" data-department="{{ mentor.department|lower }}">
+      <tr class="report-row" data-status="{{ mentor.report_statuses|join(' ') }}" data-name="{{ mentor.name|lower }}" data-department="{{ mentor.department|lower }}">
         <td><strong>{{ mentor.name }}</strong><small class="d-block text-muted">ID {{ mentor.id }} · {{ mentor.email }}</small></td>
         <td><span class="user-role mentor">MENTOR</span></td><td>{{ mentor.department or 'Not set' }}</td>
-        <td><strong>{{ mentor.assigned_count }}</strong><small class="d-block text-muted">{{ mentor.completed_tasks }}/{{ mentor.total_tasks }} tasks completed</small></td>
+        <td>
+          <div class="report-progress-value"><strong>{{ mentor.progress }}%</strong><span class="text-muted">{{ mentor.completed_tasks }}/{{ mentor.total_tasks }} completed</span></div>
+          <div class="progress report-progress-bar" role="progressbar" aria-label="{{ mentor.name }} progress" aria-valuenow="{{ mentor.progress }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ mentor.progress }}%"></div></div>
+          <small class="d-block text-muted">Total Tasks: {{ mentor.total_tasks }} · Completed: {{ mentor.completed_tasks }} · In Progress: {{ mentor.in_progress_tasks }} · Pending: {{ mentor.pending_tasks }}</small>
+        </td>
         <td>Mentor workload report</td>
         <td class="text-end"><a class="btn btn-sm btn-light" href="{{ url_for('download_report', mentor_id=mentor.id) }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></td>
       </tr>
@@ -53,18 +60,18 @@
 </div>
 
 <script>
-const reportRows=[...document.querySelectorAll(".report-row")], reportSearch=document.getElementById("reportSearch"), reportDepartment=document.getElementById("reportDepartment");
-let selectedRole="all";
+const reportRows=[...document.querySelectorAll(".report-row")], reportSearch=document.getElementById("reportSearch"), reportDepartment=document.getElementById("reportDepartment"), reportStatus=document.getElementById("reportStatus");
+let selectedStatus=reportStatus.value;
 function filterReports(){
   const q=reportSearch.value.trim().toLowerCase(), d=reportDepartment.value;
   let n=0;
   reportRows.forEach(row=>{
-    const ok=(!q||row.dataset.name.includes(q))&&(!d||row.dataset.department===d)&&(selectedRole==="all"||row.dataset.role===selectedRole);
+    const statuses=(row.dataset.status||"").split(" ").filter(Boolean);
+    const ok=(!q||row.dataset.name.includes(q))&&(!d||row.dataset.department===d)&&(selectedStatus==="all"||statuses.includes(selectedStatus));
     row.classList.toggle("d-none",!ok); if(ok)n++;
   });
   document.getElementById("noReportResults").classList.toggle("d-none",n!==0);
 }
-reportSearch.addEventListener("input",filterReports); reportDepartment.addEventListener("input",filterReports);
-document.querySelectorAll(".report-role").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".report-role").forEach(b=>b.classList.remove("active"));btn.classList.add("active");selectedRole=btn.dataset.role;filterReports()}));
+reportSearch.addEventListener("input",filterReports); reportDepartment.addEventListener("input",filterReports); reportStatus.addEventListener("change",()=>{selectedStatus=reportStatus.value;filterReports()});
 </script>
 {% endblock %}

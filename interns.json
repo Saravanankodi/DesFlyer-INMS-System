@@ -1,57 +1,5 @@
 [
   {
-    "id": "101",
-    "name": "subash",
-    "email": "subash@gmail.com",
-    "phone": "7894561230",
-    "department": "Python Developement",
-    "joining_date": "2026-09-14",
-    "duration_months": 6,
-    "assigned_mentor": "101",
-    "end_date": "2027-03-14",
-    "employment_status": "Active Intern",
-    "document": {
-      "filename": "10_marksheet.pdf",
-      "stored_name": "intern_dc253b20e8db_10_marksheet.pdf"
-    }
-  },
-  {
-    "id": "102",
-    "name": "azhan",
-    "email": "azhan@gmail.com",
-    "phone": "9876543210",
-    "department": "Fullstack Developement",
-    "joining_date": "2026-09-19",
-    "duration_months": 2,
-    "assigned_mentor": "102",
-    "end_date": "2026-11-19",
-    "employment_status": "Active Intern"
-  },
-  {
-    "id": "103",
-    "name": "gayathri",
-    "email": "gayathri@gmail.com",
-    "phone": "7896541230",
-    "department": "Python Developement",
-    "joining_date": "2026-09-14",
-    "duration_months": 3,
-    "assigned_mentor": "101",
-    "end_date": "2026-12-14",
-    "employment_status": "Active Intern"
-  },
-  {
-    "id": "104",
-    "name": "sakthi",
-    "email": "sakthi@gmail.com",
-    "phone": "8527410963",
-    "department": "Fullstack Developement",
-    "joining_date": "2026-07-18",
-    "duration_months": 2,
-    "assigned_mentor": "102",
-    "end_date": "2026-09-18",
-    "employment_status": "Past Employee"
-  },
-  {
     "name": "trisha",
     "email": "trisha@gmail.com",
     "phone": "66872766",
@@ -77,6 +25,34 @@
     "id": "DFIN002",
     "assigned_mentor": "101",
     "end_date": "2026-11-21",
+    "employment_status": "Active Intern"
+  },
+  {
+    "name": "kanmani",
+    "email": "kanmani@gmail.com",
+    "phone": "67814246390",
+    "department": "UI and UX Design",
+    "joining_date": "2026-09-22",
+    "duration_months": 3,
+    "id": "DFIN003",
+    "assigned_mentor": "101",
+    "document": {
+      "filename": "progress-report-gayathri.pdf",
+      "stored_name": "intern_cf895dd72f47_progress-report-gayathri.pdf"
+    },
+    "end_date": "2026-12-22",
+    "employment_status": "Active Intern"
+  },
+  {
+    "name": "kannan",
+    "email": "kanan@gmail.com",
+    "phone": "944467859",
+    "department": "Python Development",
+    "joining_date": "2026-09-22",
+    "duration_months": 5,
+    "id": "DFIN004",
+    "assigned_mentor": "101",
+    "end_date": "2027-02-22",
     "employment_status": "Active Intern"
   }
 ]

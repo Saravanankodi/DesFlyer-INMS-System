@@ -30,7 +30,7 @@
     {% for task in intern.tasks %}
     <tr class="{{ 'overdue-row' if task.overdue else '' }}">
       <td><strong>{{ task.title }}</strong>{% if task.overdue %}<span class="overdue-label"><i class="bi bi-exclamation-circle-fill"></i> Overdue</span>{% endif %}</td>
-      <td>{{ task.deadline }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
+      <td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
       <td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td>
       <td>
         <div class="project-actions">

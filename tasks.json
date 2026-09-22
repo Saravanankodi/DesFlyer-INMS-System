@@ -1,120 +1,55 @@
 [
   {
-    "id": "1",
-    "intern_id": "101",
+    "id": "DFPY01",
+    "intern_id": "DFIN002",
     "task_type": "Individual Work",
-    "department": "Python Developement",
-    "title": "expense tracker",
-    "description": "Create a simple Python automation project.\r\nWhat it should do:\r\n1. Check for a new reply from a client.\r\n2. When a client replies, detect the new message.\r\n3. Use \"pytz\" to check the current time.\r\n4. If it is within working hours, automatically call your mobile.\r\n5. The call should say:\r\n   \"You have received a new reply from your client.\"",
-    "deadline": "2026-09-19",
-    "priority": "Medium",
-    "status": "Completed",
-    "intern_status": "Completed",
-    "mentor_status": "Completed",
-    "mentor_pending_status": null,
-    "mentor_pending": false,
-    "created_by_role": "admin",
-    "assigned_intern_ids": [
-      "101"
-    ],
-    "assigned_names": [
-      "subash"
-    ],
-    "project_file": {
-      "filename": "client_reply_automation.zip",
-      "stored_name": "1_6f91a831aa8a_client_reply_automation.zip"
-    },
-    "completed_at": "2026-09-19"
-  },
-  {
-    "id": "2",
-    "intern_id": "104",
-    "task_type": "Individual Work",
-    "department": "Fullstack Developement",
-    "title": "test",
-    "description": "tets",
-    "deadline": "2026-09-21",
+    "department": "Python Development",
+    "title": "it manager",
+    "description": "test the pressure of it manager",
+    "start_date": "2026-09-22",
+    "deadline": "2026-09-22",
     "priority": "High",
     "status": "In Progress",
-    "intern_status": "In Progress",
+    "intern_status": "Start",
     "mentor_status": "In Progress",
     "mentor_pending_status": null,
     "mentor_pending": false,
     "created_by_role": "admin",
+    "parent_task_id": null,
+    "parent_task_title": "",
     "assigned_intern_ids": [
-      "104"
+      "DFIN002"
     ],
     "assigned_names": [
-      "sakthi"
+      "surya"
     ]
   },
   {
-    "id": "3",
-    "intern_id": "103",
-    "task_type": "Individual Work",
-    "department": "Python Developement",
-    "title": "test",
-    "description": "tets",
-    "deadline": "2026-09-21",
+    "id": "DFPY02",
+    "intern_id": "DFIN002",
+    "task_type": "Team Work",
+    "department": "Python Development",
+    "title": "stress detection",
+    "description": "detect the streess properly",
+    "start_date": "2026-09-22",
+    "deadline": "2026-09-25",
     "priority": "High",
     "status": "Completed",
-    "intern_status": "Completed",
-    "mentor_status": "Completed",
-    "mentor_pending_status": null,
-    "mentor_pending": false,
-    "created_by_role": "mentor",
-    "assigned_intern_ids": [
-      "103"
-    ],
-    "assigned_names": [
-      "gayathri"
-    ],
-    "completed_at": "2026-09-21"
-  },
-  {
-    "id": "DFPD",
-    "intern_id": "101",
-    "task_type": "Individual Work",
-    "department": "Python Developement",
-    "title": "expense tracker",
-    "description": "TEST",
-    "deadline": "2026-09-22",
-    "priority": "High",
-    "status": "Completed",
-    "intern_status": "Completed",
-    "mentor_status": "Completed",
-    "mentor_pending_status": null,
-    "mentor_pending": false,
-    "created_by_role": "mentor",
-    "completed_at": "2026-09-21",
-    "assigned_intern_ids": [
-      "101"
-    ],
-    "assigned_names": [
-      "subash"
-    ]
-  },
-  {
-    "id": "DFPD2",
-    "intern_id": "103",
-    "task_type": "Individual Work",
-    "department": "Python Developement",
-    "title": "TEST",
-    "description": "TEST",
-    "deadline": "2026-09-21",
-    "priority": "High",
-    "status": "Completed",
-    "intern_status": "Completed",
+    "intern_status": "In Progress",
     "mentor_status": "Completed",
     "mentor_pending_status": null,
     "mentor_pending": false,
     "created_by_role": "admin",
-    "completed_at": "2026-09-21",
+    "parent_task_id": null,
+    "parent_task_title": "",
     "assigned_intern_ids": [
-      "103"
+      "DFIN002",
+      "DFIN004"
     ],
     "assigned_names": [
-      "gayathri"
-    ]
+      "surya",
+      "kannan"
+    ],
+    "completed_at": "2026-09-22"
   }
 ]

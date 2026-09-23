@@ -53,5 +53,35 @@
       "kannan"
     ],
     "completed_at": "2026-09-22"
+  },
+  {
+    "id": "DFPY01-01",
+    "intern_id": "DFIN002",
+    "task_type": "Individual Work",
+    "department": "Python Development",
+    "title": "it manager login",
+    "description": "testing",
+    "start_date": "2026-09-22",
+    "deadline": "2026-09-23",
+    "priority": "High",
+    "status": "In Progress",
+    "intern_status": "In Progress",
+    "mentor_status": "In Progress",
+    "mentor_pending_status": null,
+    "mentor_pending": false,
+    "created_by_role": "mentor",
+    "assigned_mentor": "DFM001",
+    "parent_task_id": "DFPY01",
+    "parent_task_title": "it manager",
+    "assigned_intern_ids": [
+      "DFIN002"
+    ],
+    "assigned_names": [
+      "surya"
+    ],
+    "intern_project_file": {
+      "filename": "Internship_Tracker-main.zip",
+      "stored_name": "DFPY01-01_421e6b66aec4_Internship_Tracker-main.zip"
+    }
   }
 ]

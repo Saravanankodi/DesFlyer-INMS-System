@@ -404,11 +404,17 @@ def is_overdue(task):
         return False
 
 
+def is_admin_task(task):
+    """Return True for tasks created directly by Admin, not Mentor subtasks."""
+    return task.get("created_by_role", "admin") != "mentor" and not task.get("parent_task_id")
+
+
 def intern_summary(intern, tasks, role="admin"):
     assigned = [{**task, "overdue": is_overdue(task),
                  "deadline_display": format_task_date(task.get("deadline")),
                  "view_status": task_status_for_role(task, role)} for task in tasks
-                if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])]
+                if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])
+                and (role != "intern" or is_admin_task(task))]
     completed = sum(task["view_status"] == "Completed" for task in assigned)
     start_tasks = sum(task["view_status"] == "Start" for task in assigned)
     not_completed_tasks = sum(task["view_status"] == "Not Completed" for task in assigned)
@@ -726,11 +732,36 @@ def mentor_dashboard():
         return item
     admin_tasks = [prepare(t) for t in admin_tasks]
     mentor_subtasks = [prepare(t) for t in mentor_subtasks]
-    completed = sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks)
+    def card_stats(task_rows):
+        statuses = [normalize_task_status(t.get("status", "Start")) for t in task_rows]
+        total = len(task_rows)
+        completed_count = statuses.count("Completed")
+        return {
+            "interns": len({iid for t in task_rows for iid in (t.get("assigned_intern_ids") or [t.get("intern_id")]) if iid}),
+            "tasks": total,
+            "progress": round(completed_count / total * 100, 1) if total else 0,
+            "completed": completed_count,
+            "in_progress": statuses.count("In Progress"),
+            "not_started": statuses.count("Start"),
+            "incomplete": statuses.count("Not Completed"),
+            "overdue": sum(is_overdue(t) for t in task_rows),
+        }
+
+    admin_card_stats = card_stats([
+        t for t in my_tasks
+        if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")
+    ])
+    mentor_card_stats = card_stats([t for t in my_tasks if t.get("created_by_role") == "mentor" or t.get("parent_task_id")])
+    # Intern allocation is independent of task allocation.  A mentor must
+    # still see all interns assigned to them even when those interns have
+    # no tasks yet.
+    mentor_card_stats["interns"] = len(ids)
     return render_template("mentor_dashboard.html", interns=my_interns,
                            tasks=decorate_tasks(my_tasks, interns), admin_tasks=admin_tasks, mentor_subtasks=mentor_subtasks,
-                           total_tasks=len(my_tasks), completed=completed, priorities=PRIORITIES, statuses=STATUSES,
-                           progress=round(completed / len(my_tasks) * 100, 1) if my_tasks else 0)
+                           admin_card_stats=admin_card_stats, mentor_card_stats=mentor_card_stats,
+                           total_tasks=len(my_tasks), completed=sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks),
+                           priorities=PRIORITIES, statuses=STATUSES,
+                           progress=round(sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks) / len(my_tasks) * 100, 1) if my_tasks else 0)
 
 
 @app.route("/intern/dashboard")
@@ -868,9 +899,13 @@ def view_mentors():
 
 @app.get("/mentors/<mentor_id>")
 def view_mentor_profile(mentor_id):
-    if not role_required("admin"):
-        flash("Only an admin can view mentor profiles.", "danger")
+    user = current_user()
+    if not user or user.get("role") not in {"admin", "mentor"}:
+        flash("Only admins and mentors can view mentor profiles.", "danger")
         return redirect(url_for("home"))
+    if user.get("role") == "mentor" and user.get("mentor_id") != mentor_id:
+        flash("You cannot view another mentor's profile.", "danger")
+        return redirect(url_for("reports"))
     interns, tasks, mentors = get_data()
     mentor = next((item for item in mentors if item.get("id") == mentor_id), None)
     if not mentor:
@@ -1059,9 +1094,16 @@ def view_tasks():
     if role_required("mentor"):
         ids = mentor_intern_ids(current_user(), interns)
         mentor_id = current_user().get("mentor_id")
-        tasks = [t for t in tasks if t.get("assigned_mentor") == mentor_id or ids.intersection(
+        visible = [t for t in tasks if t.get("assigned_mentor") == mentor_id or ids.intersection(
             t.get("assigned_intern_ids", [t.get("intern_id")]))]
-    return render_template("tasks.html", tasks=decorate_tasks(tasks, interns))
+        admin_tasks = [t for t in visible if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")]
+        mentor_subtasks = [t for t in visible if t.get("created_by_role") == "mentor" or t.get("parent_task_id")]
+        return render_template("tasks.html", is_mentor=True,
+                               tasks=decorate_tasks(visible, interns),
+                               admin_tasks=decorate_tasks(admin_tasks, interns),
+                               mentor_subtasks=decorate_tasks(mentor_subtasks, interns))
+    return render_template("tasks.html", is_mentor=False, tasks=decorate_tasks(tasks, interns),
+                           admin_tasks=[], mentor_subtasks=[])
 
 
 @app.get("/tasks/<task_id>")
@@ -1078,8 +1120,9 @@ def view_task(task_id):
     if user.get("role") == "mentor" and not mentor_intern_ids(user, interns).intersection(assigned_ids):
         flash("You cannot view this task.", "danger")
         return redirect(url_for("view_tasks"))
-    if user.get("role") == "intern" and user.get("intern_id") not in assigned_ids:
-        flash("You cannot view this task.", "danger")
+    if user.get("role") == "intern" and (
+            user.get("intern_id") not in assigned_ids or not is_admin_task(task)):
+        flash("Mentor-assigned subtasks are not available in My Tasks.", "danger")
         return redirect(url_for("intern_dashboard"))
     intern_by_id = {item.get("id"): item for item in interns}
     mentor_names = {mentor["id"]: mentor["name"] for mentor in mentors}
@@ -1343,7 +1386,9 @@ def update_intern_task_status(task_id):
     interns, tasks, _ = get_data()
     user = current_user()
     task = next((t for t in tasks if t.get("id") == task_id), None)
-    if task is None or user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")]):
+    if (task is None
+            or user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")])
+            or not is_admin_task(task)):
         flash("Task not found or access denied.", "danger")
         return redirect(url_for("intern_dashboard"))
     status = request.form.get("status", "").strip()
@@ -1470,6 +1515,41 @@ def reports():
                            departments=available_departments(interns, mentors))
 
 
+@app.get("/reports/intern/<intern_id>")
+def intern_report_detail(intern_id):
+    if not role_required("admin", "mentor"):
+        flash("Only admins and mentors can view reports.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, mentors = get_data()
+    intern = next((item for item in interns if item.get("id") == intern_id), None)
+    if not intern:
+        flash("Intern not found.", "danger")
+        return redirect(url_for("reports"))
+    if role_required("mentor") and intern_id not in mentor_intern_ids(current_user(), interns):
+        flash("You cannot view this intern report.", "danger")
+        return redirect(url_for("reports"))
+    mentor_names = {m.get("id"): m.get("name") for m in mentors}
+    mentor = mentor_names.get(intern.get("assigned_mentor"), "Unassigned")
+    summary = intern_summary(intern, tasks, role=current_user().get("role", "admin"))
+    detail_tasks = []
+    intern_by_id = {item.get("id"): item for item in interns}
+    for raw in summary.get("tasks", []):
+        decorated = decorate_tasks([raw], interns)[0]
+        parent = parent_admin_task(raw, tasks)
+        decorated["parent_task_title"] = raw.get("parent_task_title") or (parent.get("title") if parent else "")
+        decorated["parent_final_project_file"] = parent.get("final_project_file") if parent else None
+        decorated["intern_project_file"] = raw.get("intern_project_file")
+        decorated["final_project_file"] = raw.get("final_project_file")
+        assigned_interns = []
+        for iid in raw.get("assigned_intern_ids", [raw.get("intern_id")]):
+            item = intern_by_id.get(iid)
+            if item:
+                assigned_interns.append({**item, "mentor_name": mentor_names.get(item.get("assigned_mentor"), "Unassigned")})
+        detail_tasks.append({"task": decorated, "assigned_interns": assigned_interns, "parent_task": parent})
+    return render_template("intern_report_detail.html", intern=summary, mentor_name=mentor,
+                           detail_tasks=detail_tasks)
+
+
 @app.get("/download-report")
 def download_report():
     if not role_required("admin", "mentor"):
@@ -1488,57 +1568,121 @@ def download_report():
 
     if requested_intern:
         interns = [intern for intern in interns if intern.get("id") == requested_intern]
-    enriched = [{**intern, "mentor_name": mentor_names.get(intern.get("assigned_mentor"), "Unassigned")}
-                for intern in interns]
-    report_rows = [intern_summary(intern, tasks) for intern in enriched]
 
     if requested_mentor:
         mentor = next((m for m in mentors if m.get("id") == requested_mentor), None)
         if not mentor:
             flash("Mentor not found.", "danger")
             return redirect(url_for("reports"))
-        assigned = [i for i in load_json(INTERNS_FILE) if i.get("assigned_mentor") == requested_mentor]
-        report_rows = [intern_summary(i, tasks) for i in assigned]
+        interns = [i for i in load_json(INTERNS_FILE) if i.get("assigned_mentor") == requested_mentor]
         title = f"Mentor Report - {mentor.get('name', 'Mentor')}"
         filename = f"mentor-report-{secure_filename(mentor.get('name', 'mentor'))}.pdf"
     else:
-        title = "Progress Reports" if not requested_intern else f"Progress Report - {report_rows[0].get('name', 'Intern') if report_rows else 'Intern'}"
-        filename = "progress-reports.pdf" if not requested_intern else f"progress-report-{secure_filename(report_rows[0].get('name', 'intern'))}.pdf"
+        title = "Progress Reports" if not requested_intern else f"Progress Report - {interns[0].get('name', 'Intern') if interns else 'Intern'}"
+        filename = "progress-reports.pdf" if not requested_intern else f"progress-report-{secure_filename(interns[0].get('name', 'intern'))}.pdf"
+
+    mentor_by_id = {m.get("id"): m.get("name", "Unassigned") for m in mentors}
+    report_rows = []
+    for intern in interns:
+        summary = intern_summary(intern, tasks, role=current_user().get("role", "admin"))
+        task_rows = []
+        for raw in summary.get("tasks", []):
+            decorated = decorate_tasks([raw], load_json(INTERNS_FILE))[0]
+            parent = parent_admin_task(raw, tasks)
+            decorated["parent_task_title"] = raw.get("parent_task_title") or (parent.get("title") if parent else "")
+            decorated["parent_final_project_file"] = parent.get("final_project_file") if parent else None
+            decorated["intern_project_file"] = raw.get("intern_project_file")
+            decorated["final_project_file"] = raw.get("final_project_file")
+            assigned_interns = []
+            for iid in raw.get("assigned_intern_ids", [raw.get("intern_id")]):
+                item = next((x for x in load_json(INTERNS_FILE) if x.get("id") == iid), None)
+                if item:
+                    assigned_interns.append({**item, "mentor_name": mentor_by_id.get(item.get("assigned_mentor"), "Unassigned")})
+            task_rows.append((decorated, assigned_interns))
+        report_rows.append((summary, task_rows, mentor_by_id.get(intern.get("assigned_mentor"), "Unassigned")))
 
     buffer = BytesIO()
-    document = SimpleDocTemplate(buffer, pagesize=A4, title=title)
+    document = SimpleDocTemplate(buffer, pagesize=A4, title=title,
+                                 rightMargin=32, leftMargin=32, topMargin=34, bottomMargin=34)
     styles = getSampleStyleSheet()
-    story = [Paragraph(escape(title), styles["Title"])]
-    for intern in report_rows:
+    title_style = styles["Title"]
+    title_style.fontName = "Helvetica-Bold"
+    title_style.fontSize = 20
+    title_style.leading = 24
+    h2 = styles["Heading2"]
+    h2.fontName = "Helvetica-Bold"
+    h2.fontSize = 14
+    h2.leading = 17
+    body = styles["BodyText"]
+    body.fontName = "Helvetica"
+    body.fontSize = 9.5
+    body.leading = 13
+    small = styles["BodyText"].clone("reportSmall")
+    small.fontSize = 8
+    small.leading = 10
+
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.platypus import KeepTogether
+
+    story = [Paragraph(escape(title), title_style), Spacer(1, 12)]
+    for summary, task_rows, mentor_name in report_rows:
         story.extend([
-            Paragraph(escape(intern.get("name", "")), styles["Heading2"]),
-            Paragraph(escape(f'{intern.get("department", "")} · {intern.get("email", "")} · ID {intern.get("id", "")}'), styles["BodyText"]),
-            Paragraph(escape(f'Mentor: {intern.get("mentor_name", "Unassigned")}'), styles["BodyText"]),
-            Paragraph(escape(f'Progress: {intern.get("progress", 0)}% · Latest completed: {intern.get("latest_completed_task", "None")}'), styles["BodyText"]),
-            Spacer(1, 6),
+            Paragraph(escape(summary.get("name", "")), h2),
+            Paragraph(escape(f'{summary.get("department", "")} · {summary.get("email", "")} · ID {summary.get("id", "")}'), body),
+            Paragraph(escape(f'Mentor: {mentor_name}'), body),
+            Spacer(1, 8),
         ])
-        rows = [["Task / Description", "Deadline", "Priority", "Status"]]
-        for task in intern.get("tasks", []):
-            task_title = escape(task.get("title", ""))
-            description = escape(task.get("description", "") or "No description provided.")
-            task_id = escape(task.get("id", ""))
-            parent = escape(task.get("parent_task_id", "") or "")
-            meta = f"Task ID: {task_id}" + (f" · Parent: {parent}" if parent else "")
-            detail = Paragraph(f"<b>{task_title}</b><br/><font size='8'>{meta}</font><br/>{description}", styles["BodyText"])
-            rows.append([detail, format_task_date(task.get("deadline")), task.get("priority", ""),
-                         task.get("view_status", task.get("status", ""))])
-        if len(rows) == 1:
-            rows.append(["No tasks assigned.", "", "", ""])
-        table = Table(rows, colWidths=[250, 75, 70, 75], repeatRows=1)
-        table.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, "#cccccc"),
-                                   ("BACKGROUND", (0, 0), (-1, 0), "#eef2f5"),
-                                   ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                                   ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                                   ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                                   ("TOPPADDING", (0, 0), (-1, -1), 6),
-                                   ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
-        story.append(table)
-        story.append(Spacer(1, 14))
+        if not task_rows:
+            story.append(Paragraph("No tasks assigned.", body))
+            story.append(Spacer(1, 14))
+            continue
+        for task, assigned_interns in task_rows:
+            status = task.get("view_status", task.get("status", "Start"))
+            status_bg = colors.HexColor("#e1f6ed") if status == "Completed" else colors.HexColor("#fff3d7") if status == "Start" else colors.HexColor("#e7f0ff")
+            status_fg = colors.HexColor("#147953") if status == "Completed" else colors.HexColor("#9e6c0c") if status == "Start" else colors.HexColor("#316bc8")
+            task_title = Paragraph(escape(task.get("title", "")), h2)
+            header_data = [[Paragraph(escape(task.get("task_type", "Individual Work").upper()), small), "", Paragraph(escape(status), body)]]
+            header = Table(header_data, colWidths=[180, 220, 90])
+            header.setStyle(TableStyle([
+                ("BACKGROUND", (0,0), (-1,-1), colors.white),
+                ("TEXTCOLOR", (0,0), (0,0), colors.HexColor("#3777e8")),
+                ("TEXTCOLOR", (2,0), (2,0), status_fg),
+                ("BACKGROUND", (2,0), (2,0), status_bg),
+                ("ALIGN", (2,0), (2,0), "CENTER"),
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("BOX", (0,0), (-1,-1), 0.6, colors.HexColor("#e5e9ed")),
+                ("LEFTPADDING", (0,0), (-1,-1), 10), ("RIGHTPADDING", (0,0), (-1,-1), 10),
+                ("TOPPADDING", (0,0), (-1,-1), 8), ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+            ]))
+            meta = [[
+                Paragraph("<font color='#6f7d88'>Task ID</font><br/><b>%s</b>" % escape(task.get("id", "")), body),
+                Paragraph("<font color='#6f7d88'>Parent</font><br/><b>%s</b>" % escape(task.get("parent_task_title") or task.get("parent_task_id") or "—"), body),
+                Paragraph("<font color='#6f7d88'>Department</font><br/><b>%s</b>" % escape(task.get("department") or "Not set"), body),
+                Paragraph("<font color='#6f7d88'>Priority</font><br/><b>%s</b>" % escape(task.get("priority", "")), body),
+                Paragraph("<font color='#6f7d88'>Start Date</font><br/><b>%s</b>" % escape(task.get("start_date") or "Not set"), body),
+                Paragraph("<font color='#6f7d88'>Due Date</font><br/><b>%s</b>" % escape(task.get("deadline_display", "")), body),
+            ]]
+            meta_table = Table(meta, colWidths=[80,80,95,60,80,85])
+            meta_table.setStyle(TableStyle([("VALIGN",(0,0),(-1,-1),"TOP"),("LEFTPADDING",(0,0),(-1,-1),4),("RIGHTPADDING",(0,0),(-1,-1),4),("TOPPADDING",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8)]))
+            if current_user().get("role") == "admin":
+                submission_text = "Project submitted by Mentor" if task.get("final_project_file") else "Not submitted yet"
+                submission_label = "FINAL SUBMISSION"
+                submission_title = "PROJECT SUBMITTED BY MENTOR"
+            else:
+                submission_text = "ZIP received from intern" if task.get("intern_project_file") else "Not uploaded yet"
+                submission_label = "INTERN SUBMISSION"
+                submission_title = "ZIP RECEIVED FROM INTERN"
+            submission = Table([[Paragraph("<font color='#3777e8'><b>%s</b></font><br/><b>%s</b><br/><font color='#6f7d88'>%s</font>" % (submission_label, submission_title, escape(submission_text)), body)]], colWidths=[480])
+            submission.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),colors.HexColor("#f8fafc")),("BOX",(0,0),(-1,-1),0.6,colors.HexColor("#e5e9ed")),("LEFTPADDING",(0,0),(-1,-1),10),("RIGHTPADDING",(0,0),(-1,-1),10),("TOPPADDING",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8)]))
+            assigned_data = [["INTERN ID","INTERN NAME","DEPARTMENT","START DATE","DURATION","END DATE","MENTOR","STATUS"]]
+            for item in assigned_interns:
+                assigned_data.append([item.get("id",""),item.get("name",""),item.get("department",""),item.get("joining_date",""),f'{item.get("duration_months","")} months',item.get("end_date") or "Not set",item.get("mentor_name","Unassigned"),item.get("employment_status","")])
+            if len(assigned_data) == 1:
+                assigned_data.append(["No assigned interns"] + [""]*7)
+            assigned_table = Table(assigned_data, colWidths=[55,65,75,60,55,60,60,50], repeatRows=1)
+            assigned_table.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,0),colors.HexColor("#fafbfc")),("GRID",(0,0),(-1,-1),0.45,colors.HexColor("#e5e9ed")),("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),("FONTSIZE",(0,0),(-1,-1),6.5),("VALIGN",(0,0),(-1,-1),"MIDDLE"),("LEFTPADDING",(0,0),(-1,-1),4),("RIGHTPADDING",(0,0),(-1,-1),4),("TOPPADDING",(0,0),(-1,-1),5),("BOTTOMPADDING",(0,0),(-1,-1),5)]))
+            story.append(KeepTogether([header, Paragraph(escape(task.get("title", "")), h2), Paragraph(escape(task.get("description") or "No description provided."), body), meta_table, Spacer(1,5), submission, Spacer(1,9), Paragraph("Assigned Interns", h2), assigned_table, Spacer(1,16)]))
     document.build(story)
     buffer.seek(0)
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
@@ -1552,7 +1696,9 @@ def upload_project(task_id):
     interns, tasks, _ = get_data()
     user = current_user()
     task = next((t for t in tasks if t.get("id") == task_id), None)
-    if task is None or user.get("intern_id") not in (task.get("assigned_intern_ids") or [task.get("intern_id")]):
+    if (task is None
+            or user.get("intern_id") not in (task.get("assigned_intern_ids") or [task.get("intern_id")])
+            or not is_admin_task(task)):
         flash("Task not found or access denied.", "danger")
         return redirect(url_for("intern_dashboard"))
     uploaded = save_upload(request.files.get("project_file"), PROJECT_UPLOAD_DIR, task_id)

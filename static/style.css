@@ -908,7 +908,7 @@ body {
 
 .users-table-scroll th:last-child,
 .users-table-scroll td:last-child {
-  width: 150px;
+  width: 180px;
 }
 
 .users-table-scroll thead th {
@@ -1937,4 +1937,161 @@ body .card textarea {
 .user-info {
   background: #ffffff !important;
   border-color: #000000 !important;
+}
+
+/* Consolidated mentor dashboard/task refinements. */
+.dashboard-card-group{padding:0;margin:0;}
+.dashboard-card-group .section-title{margin-bottom:16px;}
+.dashboard-metric-card{min-height:165px;}
+.mentor-dashboard-table-scroll{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px;}
+.mentor-dashboard-table-scroll .table{min-width:1500px;}
+.mentor-dashboard-table-scroll thead th{position:sticky;top:0;z-index:3;background:#fafbfc;}
+.mentor-page-table-scroll{height:360px;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px;}
+.mentor-page-table-scroll .table{min-width:1250px;}
+.mentor-page-table-scroll thead th{position:sticky;top:0;z-index:3;background:#fafbfc;box-shadow:0 1px 0 var(--line);}
+.report-detail-intern-scroll{max-height:330px;overflow:auto;}
+.report-detail-intern-scroll thead th{position:sticky;top:0;z-index:3;background:#fafbfc;}
+/* Consistent action controls everywhere: slightly larger and clearly separated. */
+.table-actions.task-actions{display:flex!important;align-items:center;justify-content:center;gap:10px;white-space:nowrap;}
+.table-actions.task-actions > a,
+.table-actions.task-actions > form{display:inline-flex!important;margin:0!important;}
+.task-actions .btn,
+.table-actions .icon-action,
+.table-actions > a.btn{width:46px!important;height:42px!important;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;}
+.task-actions .btn i,
+.table-actions .icon-action i,
+.table-actions > a.btn i{font-size:22px!important;line-height:1;}
+@media(max-width:991.98px){
+  .mentor-dashboard-table-scroll{max-height:300px;}
+  .mentor-page-table-scroll{height:320px;max-height:320px;}
+  .mentor-dashboard-table-scroll .table,.mentor-page-table-scroll .table{min-width:1200px;}
+}
+
+
+/* User Management: icon-only Edit and Delete actions with clear spacing and safe edge padding. */
+.users-table-scroll .user-actions-heading,
+.users-table-scroll .user-actions-cell {
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+.users-table-scroll th:last-child,
+.users-table-scroll td:last-child {
+  width: 150px;
+}
+.users-table-scroll .user-actions-cell {
+  padding-right: 28px !important;
+  padding-left: 18px !important;
+}
+.users-table-scroll .user-action-buttons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.users-table-scroll .user-action-buttons > a,
+.users-table-scroll .user-action-buttons > form {
+  display: inline-flex;
+  margin: 0 !important;
+}
+.users-table-scroll .user-action-icon {
+  width: 46px !important;
+  height: 42px !important;
+  min-width: 46px !important;
+  min-height: 42px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+}
+.users-table-scroll .user-action-icon i {
+  font-size: 21px !important;
+  line-height: 1;
+}
+.users-table-scroll .user-delete-form {
+  display: inline-flex;
+}
+@media (max-width: 767.98px) {
+  .users-table-scroll .user-actions-cell {
+    padding-right: 22px !important;
+  }
+  .users-table-scroll .user-action-buttons {
+    gap: 8px;
+  }
+}
+
+/* Global filter Clear-button alignment. Keeps every filter action on the same baseline. */
+.filter-clear-button {
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  transform: none !important;
+}
+.intern-filter-action {
+  align-self: stretch !important;
+  display: flex !important;
+  align-items: flex-end !important;
+}
+.intern-filter-action .filter-clear-button {
+  width: 100% !important;
+}
+
+/* Final filter control alignment: Clear must exactly match the height of the
+   standard search/select controls used beside it. */
+.filter-clear-button {
+  height: 46px !important;
+  min-height: 46px !important;
+}
+/* Mentor dashboard's compact filter row uses 42px controls. */
+.mentor-filter-row .filter-clear-button {
+  height: 42px !important;
+  min-height: 42px !important;
+}
+
+/* Team Member columns: keep member counts/values centered everywhere. */
+.team-member-column,
+.intern-count-column {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+/* FINAL FIX: explicitly center Team Member and Intern count columns.
+   This rule is intentionally placed at the end so it overrides the later
+   global table-body left-alignment rule. */
+body .table thead th.team-member-column,
+body .table tbody td.team-member-column,
+body .table thead th.intern-count-column,
+body .table tbody td.intern-count-column {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+
+/* Progress reports: compact icon-only PDF/View actions. */
+.report-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+}
+.report-actions .icon-action {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.report-actions .icon-action i {
+  font-size: 21px !important;
+  line-height: 1 !important;
 }

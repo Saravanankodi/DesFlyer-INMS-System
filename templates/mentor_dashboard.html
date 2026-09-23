@@ -1,47 +1,67 @@
 {% extends "base.html" %}
-{% block title %}Mentor DASHBOARD{% endblock %}
+{% block title %}Mentor Dashboard{% endblock %}
 {% block content %}
 <div class="page-heading"><div><span class="eyebrow workspace-label">Mentor workspace</span><h1>Welcome, {{ current_user.username|title }}.</h1><p class="text-muted">Manage assigned interns, admin tasks, mentor subtasks, and progress.</p></div><a class="btn btn-primary assign-task-action" href="{{ url_for('assign_task') }}"><i class="bi bi-plus-lg"></i> Assign task</a></div>
-<div class="row g-3 mb-4">
-{% for label, value, icon, tone in [('My interns', interns|length, 'people-fill', 'blue'),('My tasks', total_tasks, 'list-check', 'violet'),('Completed', completed, 'check-circle-fill', 'green'),('Overall progress', progress ~ '%', 'graph-up-arrow', 'cyan')] %}
-<div class="col-6 col-xl-3"><div class="metric-card"><div class="metric-icon {{ tone }}"><i class="bi bi-{{ icon }}"></i></div><strong>{{ value }}</strong><span>{{ label }}</span></div></div>
-{% endfor %}
-</div>
 
-<div class="section-title"><div><span class="eyebrow">Your team</span><h2>Intern progress</h2></div><a class="btn btn-sm btn-light" href="{{ url_for('reports') }}">View reports <i class="bi bi-arrow-right"></i></a></div>
-<div class="row g-3 mb-4">
-{% for intern in interns %}<div class="col-md-6 col-xl-4"><div class="card intern-card"><div class="card-body">
-  <div class="d-flex align-items-center gap-3 mb-3"><div class="avatar">{{ intern.name[:1]|upper }}</div><div><strong>{{ intern.name }}</strong><small class="d-block text-muted">{{ intern.department }}</small></div></div>
-  <div class="d-flex justify-content-between small mb-1"><span>Progress</span><strong>{{ intern.progress }}%</strong></div><div class="progress"><div class="progress-bar" style="width:{{ intern.progress }}%"></div></div>
-  <div class="d-flex justify-content-between text-muted small mt-3"><span>{{ intern.total_tasks }} tasks</span><span>{{ intern.completed_tasks }} done</span></div>
-  <div class="mentor-intern-dates"><span><b>Start</b> {{ intern.joining_date }}</span><span><b>Duration</b> {{ intern.duration_months }} months</span></div>
-</div></div></div>{% else %}<div class="col-12"><div class="card empty-state">No interns are assigned to you yet.</div></div>{% endfor %}
-</div>
+<section class="dashboard-card-group mb-4">
+  <div class="section-title mt-0"><div><span class="eyebrow">Admin allocation</span><h2>Admin Assigned Work</h2></div></div>
+  <div class="row g-3">
+  {% set admin_cards = [
+    ('Interns', admin_card_stats.interns, 'people-fill', 'blue'),
+    ('Tasks', admin_card_stats.tasks, 'list-check', 'violet'),
+    ('Overall progress', admin_card_stats.progress ~ '%', 'graph-up-arrow', 'cyan'),
+    ('Completed', admin_card_stats.completed, 'check-circle-fill', 'green'),
+    ('In Progress', admin_card_stats.in_progress, 'arrow-repeat', 'blue'),
+    ('Not Started', admin_card_stats.not_started, 'hourglass-split', 'amber'),
+    ('Incomplete', admin_card_stats.incomplete, 'x-circle-fill', 'red'),
+    ('Overdue', admin_card_stats.overdue, 'exclamation-triangle-fill', 'red')
+  ] %}
+  {% for label, value, icon, tone in admin_cards %}
+    <div class="col-6 col-md-4 col-xl-3"><div class="metric-card dashboard-metric-card"><div class="metric-icon {{ tone }}"><i class="bi bi-{{ icon }}"></i></div><strong>{{ value }}</strong><span>{{ label }}</span></div></div>
+  {% endfor %}
+  </div>
+</section>
+
+<section class="dashboard-card-group mb-4">
+  <div class="section-title mt-0"><div><span class="eyebrow">Mentor allocation</span><h2>Mentor Assigned Work</h2></div></div>
+  <div class="row g-3">
+  {% set mentor_cards = [
+    ('Interns', mentor_card_stats.interns, 'people-fill', 'blue'),
+    ('Tasks', mentor_card_stats.tasks, 'list-check', 'violet'),
+    ('Overall progress', mentor_card_stats.progress ~ '%', 'graph-up-arrow', 'cyan'),
+    ('Completed', mentor_card_stats.completed, 'check-circle-fill', 'green'),
+    ('In Progress', mentor_card_stats.in_progress, 'arrow-repeat', 'blue'),
+    ('Not Started', mentor_card_stats.not_started, 'hourglass-split', 'amber'),
+    ('Incomplete', mentor_card_stats.incomplete, 'x-circle-fill', 'red'),
+    ('Overdue', mentor_card_stats.overdue, 'exclamation-triangle-fill', 'red')
+  ] %}
+  {% for label, value, icon, tone in mentor_cards %}
+    <div class="col-6 col-md-4 col-xl-3"><div class="metric-card dashboard-metric-card"><div class="metric-icon {{ tone }}"><i class="bi bi-{{ icon }}"></i></div><strong>{{ value }}</strong><span>{{ label }}</span></div></div>
+  {% endfor %}
+  </div>
+</section>
 
 <div class="mentor-task-section card dashboard-panel mb-4"><div class="card-body p-4">
-  <div class="d-flex justify-content-between align-items-center mb-3"><div><span class="eyebrow">Admin allocation</span><h2>Tasks Assigned by Admin</h2></div></div>
-  <div class="mentor-table-scroll">
-  <table class="table align-middle mb-0"><thead><tr><th>Task</th><th>Team Member</th><th>Start Date</th><th>Duration</th><th>Deadline</th><th>Priority</th><th>Status</th><th>Project ZIP</th></tr></thead><tbody>
-  {% for task in admin_tasks %}<tr class="{{ 'overdue-row' if task.overdue else '' }}"><td><strong>{{ task.title }}</strong></td><td class="center-column">{{ task.assigned_count }}</td><td>{{ task.start_date or '—' }}</td><td>{{ task.duration_months ~ ' months' if task.duration_months else '—' }}</td><td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td><td>{% if task.project_file %}<a class="btn btn-sm btn-light icon-action" title="Download project ZIP" aria-label="Download project ZIP" href="{{ url_for('download_project', task_id=task.id) }}"><i class="bi bi-download"></i></a>{% else %}<span class="text-muted small">—</span>{% endif %}</td></tr>
-  {% else %}<tr><td colspan="8" class="empty-state">No admin tasks are assigned to your interns.</td></tr>{% endfor %}</tbody></table>
+  <div class="d-flex justify-content-between align-items-center mb-3"><div><span class="eyebrow">Admin allocation</span><h2>Tasks Assigned by Admin</h2><p class="text-muted small mb-0">Admin tasks assigned to this mentor's interns.</p></div></div>
+  <div class="mentor-table-scroll mentor-dashboard-table-scroll">
+  <table class="table align-middle mb-0"><thead><tr><th>Task ID</th><th>Parent Admin Task</th><th>Task Type</th><th>Department</th><th>Intern</th><th>Task Title</th><th>Start Date</th><th>Deadline</th><th>Priority</th><th>Status</th><th>Project ZIP</th><th>Actions</th></tr></thead><tbody>
+  {% for task in admin_tasks %}<tr class="{{ 'overdue-row' if task.overdue else '' }}"><td><code>{{ task.id }}</code></td><td>{{ task.parent_task_title or '—' }}</td><td><span class="badge badge-soft">{{ task.task_type }}</span></td><td><span class="badge department-badge">{{ task.department or '—' }}</span></td><td>{{ task.intern_name }}</td><td><strong>{{ task.title }}</strong></td><td>{{ task.start_date or '—' }}</td><td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td><td>{% if task.project_file %}<a class="btn btn-sm btn-light icon-action" title="Download project ZIP" href="{{ url_for('download_project', task_id=task.id) }}"><i class="bi bi-download"></i></a>{% else %}<span class="text-muted small">—</span>{% endif %}</td><td class="table-actions task-actions"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a><a class="btn btn-sm btn-light" title="Edit task" href="{{ url_for('edit_task', task_id=task.id) }}"><i class="bi bi-pencil"></i></a></td></tr>
+  {% else %}<tr><td colspan="12" class="empty-state">No admin tasks are assigned to your interns.</td></tr>{% endfor %}</tbody></table>
   </div>
 </div></div>
 
 <div class="mentor-task-section card dashboard-panel"><div class="card-body p-4">
-  <div class="d-flex justify-content-between align-items-center mb-3"><div><span class="eyebrow">Mentor allocation</span><h2>Tasks Assigned by Mentor</h2><p class="text-muted small mb-0">Subtasks created from an admin task for your interns.</p></div></div>
+  <div class="d-flex justify-content-between align-items-center mb-3"><div><span class="eyebrow">Mentor allocation</span><h2>Tasks Assigned by Mentor</h2><p class="text-muted small mb-0">Subtasks created or assigned by you for your interns.</p></div></div>
   <div class="row g-2 mb-3 mentor-filter-row">
     <div class="col-md-5"><input class="form-control mentor-subtask-filter" id="mentorSubtaskSearch" type="search" placeholder="Search subtasks or interns"></div>
     <div class="col-md-3"><select class="form-select mentor-subtask-filter" id="mentorSubtaskStatus"><option value="">All status</option>{% for status in statuses %}<option value="{{ status|lower }}">{{ status }}</option>{% endfor %}</select></div>
     <div class="col-md-3"><select class="form-select mentor-subtask-filter" id="mentorSubtaskPriority"><option value="">All priority</option>{% for priority in priorities %}<option value="{{ priority|lower }}">{{ priority }}</option>{% endfor %}</select></div>
-    <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="button" id="clearMentorSubtaskFilters" title="Clear filters"><i class="bi bi-x-lg"></i></button></div>
+    <div class="col-md-1 intern-filter-action"><button class="btn btn-outline-secondary w-100 filter-clear-button" type="button" id="clearMentorSubtaskFilters" title="Clear filters"><i class="bi bi-x-lg"></i></button></div>
   </div>
-  <div class="mentor-table-scroll">
-  <table class="table align-middle mb-0" id="mentorSubtaskTable"><thead><tr><th>Subtask</th><th>Parent Task</th><th>Team Member</th><th>Start Date</th><th>Deadline</th><th>Priority</th><th>Status</th><th>Project ZIP</th><th>Actions</th></tr></thead><tbody>
-  {% for task in mentor_subtasks %}<tr class="mentor-subtask-row" data-search="{{ (task.title ~ ' ' ~ task.intern_name ~ ' ' ~ task.parent_task_title)|lower }}" data-status="{{ task.view_status|lower }}" data-priority="{{ task.priority|lower }}"><td><strong>{{ task.title }}</strong></td><td>{{ task.parent_task_title or '—' }}</td><td>{{ task.intern_name }}</td><td>{{ task.start_date or '—' }}</td><td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td><td class="project-actions mentor-project-actions">
-    {% if task.intern_project_file %}<a class="btn btn-sm btn-light" href="{{ url_for('download_project', task_id=task.id) }}" title="Download intern ZIP"><i class="bi bi-file-earmark-zip"></i> Download</a>{% else %}<span class="text-muted small">No intern ZIP</span>{% endif %}
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_final_project', task_id=task.id) }}" class="project-upload-form mentor-final-upload-form"><input class="form-control form-control-sm" type="file" name="final_project_file" accept=".zip" required><button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-upload"></i> {{ 'Replace final ZIP' if task.final_project_file else 'Upload final ZIP' }}</button></form>
-  </td><td><a class="btn btn-sm btn-light icon-action" title="View subtask" aria-label="View subtask" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>
-  {% else %}<tr><td colspan="9" class="empty-state">No mentor subtasks assigned yet.</td></tr>{% endfor %}</tbody></table>
+  <div class="mentor-table-scroll mentor-dashboard-table-scroll">
+  <table class="table align-middle mb-0"><thead><tr><th>Task ID</th><th>Parent Admin Task</th><th>Task Type</th><th>Department</th><th>Intern</th><th>Task Title</th><th>Start Date</th><th>Deadline</th><th>Priority</th><th>Status</th><th>Project ZIP</th><th>Actions</th></tr></thead><tbody>
+  {% for task in mentor_subtasks %}<tr class="mentor-subtask-row" data-search="{{ (task.title ~ ' ' ~ task.intern_name ~ ' ' ~ task.parent_task_title)|lower }}" data-status="{{ task.view_status|lower }}" data-priority="{{ task.priority|lower }}"><td><code>{{ task.id }}</code></td><td>{{ task.parent_task_title or '—' }}</td><td><span class="badge badge-soft">{{ task.task_type }}</span></td><td><span class="badge department-badge">{{ task.department or '—' }}</span></td><td>{{ task.intern_name }}</td><td><strong>{{ task.title }}</strong></td><td>{{ task.start_date or '—' }}</td><td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td><td>{% if task.intern_project_file %}<a class="btn btn-sm btn-light icon-action" href="{{ url_for('download_project', task_id=task.id) }}" title="Download intern ZIP"><i class="bi bi-download"></i></a>{% else %}<span class="text-muted small">—</span>{% endif %}</td><td class="table-actions task-actions"><a class="btn btn-sm btn-light" title="View subtask" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a><a class="btn btn-sm btn-light" title="Edit subtask" href="{{ url_for('edit_task', task_id=task.id) }}"><i class="bi bi-pencil"></i></a></td></tr>
+  {% else %}<tr><td colspan="12" class="empty-state">No mentor subtasks assigned yet.</td></tr>{% endfor %}</tbody></table>
   <div id="noMentorSubtaskMatches" class="empty-state d-none">No subtasks match the selected filters.</div>
   </div>
 </div></div>

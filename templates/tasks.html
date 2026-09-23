@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-heading">
   <div><span class="eyebrow">Delivery pipeline</span><h1>Tasks</h1><p class="text-muted">Task ID, type, department, ownership, deadlines, and status.</p></div>
-  <a class="btn btn-primary" href="{{ url_for('assign_task') }}"><i class="bi bi-plus-lg"></i> Assign task</a>
+  <a class="btn btn-primary assign-task-action" href="{{ url_for('assign_task') }}"><i class="bi bi-plus-lg"></i> Assign task</a>
 </div>
 <div class="card table-card">
   <div class="table-scroll task-table-scroll">
@@ -13,13 +13,13 @@
       {% for task in tasks %}
       <tr class="{{ 'overdue-row' if task.overdue else '' }}">
         <td><code>{{ task.id }}</code></td><td><span class="badge badge-soft">{{ task.task_type }}</span></td><td><span class="badge department-badge">{{ task.department or '—' }}</span></td>
-        <td>{{ task.assigned_count }}</td><td><span class="task-title-normal">{{ task.title }}</span>{% if task.overdue %}<span class="overdue-label"><i class="bi bi-exclamation-circle-fill"></i> Overdue</span>{% endif %}</td>
+        <td class="center-column">{{ task.assigned_count }}</td><td><span class="task-title-normal">{{ task.title }}</span>{% if task.overdue %}<span class="overdue-label"><i class="bi bi-exclamation-circle-fill"></i> Overdue</span>{% endif %}</td>
         <td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
         <td><span class="status status-{{ task.status|lower|replace(' ', '-') }}">{{ task.status }}</span></td>
         <td class="text-nowrap">{% if task.project_file %}<a class="btn btn-sm btn-light" href="{{ url_for('download_project', task_id=task.id) }}"><i class="bi bi-download"></i> Download ZIP</a>{% else %}<span class="text-muted small">Not uploaded</span>{% endif %}</td>
-        <td class="text-end text-nowrap"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a>
+        <td class="text-end text-nowrap table-actions task-actions"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a>
           <a class="btn btn-sm btn-light" title="Edit task" href="{{ url_for('edit_task', task_id=task.id) }}"><i class="bi bi-pencil"></i></a>
-          <form class="d-inline" method="post" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('Delete this task?')"><button class="btn btn-sm btn-light text-danger" title="Delete task"><i class="bi bi-trash3"></i></button></form>
+          <form class="d-inline delete-record-form" method="post" action="{{ url_for('delete_task', task_id=task.id) }}" data-delete-name="{{ task.title }}"><button class="btn btn-sm btn-light text-danger" title="Delete task"><i class="bi bi-trash3"></i></button></form>
         </td>
       </tr>
       {% else %}<tr><td colspan="10" class="empty-state">No tasks yet. Assign work from this page.</td></tr>{% endfor %}

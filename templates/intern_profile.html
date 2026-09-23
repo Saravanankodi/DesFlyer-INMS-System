@@ -7,7 +7,10 @@
     <h1>{{ intern.name }}</h1>
     <p class="text-muted">Detailed intern profile and assigned task progress.</p>
   </div>
-  <a class="btn btn-outline-secondary" href="{{ url_for('view_interns') }}"><i class="bi bi-arrow-left"></i> Back to interns</a>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary" href="{{ url_for('download_report', intern_id=intern.id) }}"><i class="bi bi-file-earmark-pdf"></i> Download PDF</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('view_interns') }}"><i class="bi bi-arrow-left"></i> Back to interns</a>
+  </div>
 </div>
 
 <div class="row g-4 mb-4">

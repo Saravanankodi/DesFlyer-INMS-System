@@ -97,7 +97,7 @@
   .fixed-form-page{min-height:0}
 }
 
-/* IMS refinements */
+/* INMS refinements */
 .table thead th{color:#000;font-weight:800}
 .department-badge{background:#e1f6ed;color:#147953;font-weight:700;border-radius:20px;padding:5px 9px;white-space:nowrap}
 .nav-logo{height:34px;width:auto;max-width:150px;object-fit:contain;background:white;border-radius:4px;padding:3px 7px;margin-right:10px}
@@ -108,7 +108,7 @@
 .fixed-form-page .compact-form-card{flex:1 1 auto;min-height:0;overflow:auto;max-width:1100px;width:100%}
 .fixed-form-page .compact-form-card .card-body{padding-top:18px!important;padding-bottom:18px!important}
 @media(max-width:991.98px){.fixed-form-page{height:auto;overflow:visible}.fixed-form-page .compact-form-card{overflow:visible}.nav-logo{height:30px}}
-/* IMS branding and requested visual refinements */
+/* INMS branding and requested visual refinements */
 .table thead th{color:#000!important}
 .department-badge{display:inline-block;background:#e1f6ed;color:#147953;font-size:.74rem;font-weight:700;border-radius:20px;padding:5px 9px;white-space:nowrap}
 .brand-logo{height:34px;width:auto;object-fit:contain;background:#fff;border-radius:5px;padding:3px 6px}
@@ -815,7 +815,7 @@ body {
 .login-role-group input:focus-visible + span {
   border-color: var(--accent);
   box-shadow: 0 8px 22px rgba(4, 150, 255, .14);
-  transform: translateY(-2px);
+  transform: translateY(2px);
 }
 
 .login-role-group input:checked + span {
@@ -1387,6 +1387,298 @@ body.login-page .login-role-group { width: 100%; }
 .users-table-scroll td:last-child { width: 125px; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
 .users-table-scroll .icon-action { width: 40px; }
 
+.recent-intern-name {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: 700 !important;
+}
+
+.admin-dashboard-links a,
+.admin-dashboard-links a span {
+  font-size: 1.1rem;
+}
+
+.admin-task-pipeline tbody td,
+.admin-task-pipeline tbody td strong,
+.admin-task-pipeline tbody td .status,
+.admin-task-pipeline tbody td .btn {
+  font-size: 1.05rem !important;
+}
+
+.recently-completed-section p,
+.recently-completed-section .btn,
+.intern-card .recent-intern-name,
+.intern-card .d-flex.justify-content-between.small,
+.intern-card .latest-task small,
+.intern-card .latest-task strong,
+.intern-card .latest-task span {
+  font-size: 1.1rem !important;
+}
+
+.manage-interns-action {
+  color: #000000 !important;
+  font-size: 2.3rem !important;
+  font-weight: 700 !important;
+}
+
+.intern-filter-action {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.intern-filter-action .btn {
+  width: 86% !important;
+  height: 42px;
+  margin-bottom: 0;
+  transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.directory-actions {
+  white-space: nowrap;
+}
+
+.directory-actions > a,
+.directory-actions > form {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.directory-actions > a:last-child,
+.directory-actions > form:last-child {
+  margin-right: 0;
+}
+
+.directory-actions .btn {
+  display: inline-flex;
+  width: 42px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.directory-actions .btn i {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Readable data values and prominent task action controls. */
+.table tbody td {
+  font-size: 1.1rem !important;
+  line-height: 1.35;
+}
+
+.task-table-scroll tbody td {
+  font-size: 1.2rem !important;
+  line-height: 1.35;
+  padding-top: 13px;
+  padding-bottom: 13px;
+  vertical-align: middle;
+}
+
+.center-column {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.task-actions .btn,
+.table-actions .icon-action,
+.table-actions > a.btn {
+  display: inline-flex;
+  width: 44px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.task-actions .btn i,
+.table-actions .icon-action i,
+.table-actions > a.btn i {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.task-actions > a,
+.task-actions > form {
+  display: inline-flex;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.task-actions > a:last-child,
+.task-actions > form:last-child {
+  margin-right: 0;
+}
+
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #000000 !important;
+  font-size: 1rem !important;
+}
+
+.site-footer span {
+  color: #000000 !important;
+  font-size: inherit !important;
+}
+
+.delete-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .48);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+
+.delete-confirm-backdrop.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.delete-confirm-dialog {
+  width: min(420px, 100%);
+  padding: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .24);
+  text-align: center;
+  transform: translateY(12px) scale(.97);
+  transition: transform .2s ease;
+}
+
+.delete-confirm-backdrop.show .delete-confirm-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.delete-confirm-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 16px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff1f0;
+  color: #d92d20;
+  font-size: 1.55rem;
+}
+
+.delete-confirm-dialog h2 {
+  margin: 0 0 10px;
+  color: #000;
+  font-size: 1.45rem;
+}
+
+.delete-confirm-dialog p {
+  margin: 0 0 8px;
+  color: #000;
+  font-size: .98rem;
+}
+
+.delete-confirm-message {
+  color: #555 !important;
+  font-size: .84rem !important;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.delete-confirm-actions .btn {
+  min-width: 105px;
+  font-weight: 700;
+}
+
+.add-person-action {
+  min-width: 180px;
+  min-height: 52px;
+  padding: 13px 22px !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.assign-task-action {
+  min-width: 180px;
+  min-height: 52px;
+  padding: 13px 22px !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+@media (max-width: 575.98px) {
+  .add-person-action,
+  .assign-task-action {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.login-page-footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, .94);
+}
+
+@media (max-width: 575.98px) {
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+  }
+
+}
+
+.intern-card .latest-task strong {
+  font-weight: 600 !important;
+}
+
+/* Match dashboard card and section headings to the main DASHBOARD title. */
+.dashboard-panel h2,
+.dashboard-panel h3,
+.dashboard-panel h4,
+.section-title h2,
+.section-title h3,
+.recently-completed-section h2 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -.7px !important;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: #000000 !important;
+}
+
 /* Mentor project ZIP workflow. */
 .mentor-project-actions { min-width: 270px; }
 .mentor-final-upload-form { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
@@ -1396,6 +1688,17 @@ body.login-page .login-role-group { width: 100%; }
 
 /* Make dashboard metric labels a little larger everywhere without changing their style. */
 .metric-card span { font-size: 1rem; }
+
+/* Match dashboard statistic labels to the main DASHBOARD heading. */
+.metric-card span {
+  color: #000000 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -.2px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
 
 /* Priority filters: clear, readable control and consistent alignment. */
 .mentor-filter-row .form-select { color: var(--ink) !important; background-color: #fff !important; opacity: 1 !important; }
@@ -1542,4 +1845,96 @@ body.login-page .login-role-group span .role-icon {
 body.login-page .login-role-group input:checked + span .role-icon {
   background: var(--accent);
   color: #fff;
+}
+
+/* Global readability theme: larger UI text with solid black foregrounds. */
+body,
+body .card,
+body .table,
+body .form-control,
+body .form-select,
+body .form-label,
+body .nav-link,
+body .navbar-brand,
+body .btn,
+body .dropdown-menu,
+body .dropdown-item,
+body .alert,
+body .badge,
+body .user-info,
+body .mobile-side-nav,
+body .mobile-side-nav a,
+body footer {
+  color: #000000 !important;
+}
+
+body {
+  font-size: 1.15rem;
+}
+
+body p,
+body li,
+body label,
+body input,
+body select,
+body textarea,
+body button,
+body .btn,
+body .nav-link,
+body .table,
+body .card,
+body .form-text,
+body .text-muted,
+body .small,
+body small {
+  font-size: 1.05rem !important;
+  color: #000000 !important;
+}
+
+body h1 { font-size: 2.5rem; }
+body h2 { font-size: 1.85rem; }
+body h3 { font-size: 1.5rem; }
+
+body .table thead th,
+body .form-label,
+body .eyebrow {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+}
+
+body .table tbody td,
+body .table tbody td strong,
+body .table tbody td b,
+body .table tbody td span,
+body .card input,
+body .card select,
+body .card textarea {
+  font-weight: 400 !important;
+  color: #000000 !important;
+}
+
+.app-nav,
+.mobile-side-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #000000;
+}
+
+.app-nav .nav-link:hover,
+.app-nav .nav-link:focus,
+.mobile-side-links a:hover,
+.mobile-side-links a:active {
+  color: #000000 !important;
+  background: #f2f2f2;
+}
+
+.btn-primary,
+.btn-accent,
+.mobile-side-links .mobile-assign {
+  color: #000000 !important;
+}
+
+.user-info {
+  background: #ffffff !important;
+  border-color: #000000 !important;
 }

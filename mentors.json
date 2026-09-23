@@ -22,19 +22,5 @@
     "departments": [
       "Graphical Designing"
     ]
-  },
-  {
-    "id": "DFM002",
-    "name": "Lakshimi",
-    "email": "LAKSHIMI@GMAIL.COM",
-    "phone": "68845268",
-    "department": "HR Department",
-    "document": {
-      "filename": "progress-report-gayathri.pdf",
-      "stored_name": "mentor_11f84f101a2d_progress-report-gayathri.pdf"
-    },
-    "departments": [
-      "HR Department"
-    ]
   }
 ]

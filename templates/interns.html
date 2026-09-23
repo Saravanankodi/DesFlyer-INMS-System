@@ -5,7 +5,7 @@
   <div><span class="eyebrow">People directory</span><h1>Interns</h1>
   <p class="text-muted">Active interns are shown first. Past interns are kept at the bottom.</p></div>
   {% if current_user.role == 'admin' %}
-  <a class="btn btn-primary" href="{{ url_for('add_intern') }}"><i class="bi bi-person-plus-fill"></i> Add intern</a>
+  <a class="btn btn-primary add-person-action" href="{{ url_for('add_intern') }}"><i class="bi bi-person-plus-fill"></i> Add intern</a>
   {% endif %}
 </div>
 
@@ -20,7 +20,7 @@
           {% for department in departments %}<option value="{{ department|lower }}">{{ department }}</option>{% endfor %}
         </select>
       </div>
-      <div class="col-md-2"><button class="btn btn-outline-secondary w-100" type="button" id="clearInternFilters"><i class="bi bi-x-lg"></i> Clear</button></div>
+      <div class="col-md-2 intern-filter-action"><button class="btn btn-outline-secondary w-100" type="button" id="clearInternFilters"><i class="bi bi-x-lg"></i> Clear</button></div>
     </div>
   </div>
 </div>
@@ -42,14 +42,11 @@
         <td>{{ intern.email }}<small class="d-block text-muted">{{ intern.phone }}</small></td>
         <td>{{ intern.total_tasks }} total<small class="d-block text-muted">{{ intern.completed_tasks }} complete</small></td>
         <td><div class="d-flex justify-content-between small mb-1"><span>{{ intern.progress }}%</span><span class="text-muted">{{ intern.completed_tasks }}/{{ intern.total_tasks }}</span></div><div class="progress"><div class="progress-bar" style="width:{{ intern.progress }}%"></div></div></td>
-        <td class="table-actions text-nowrap">
+        <td class="table-actions text-nowrap directory-actions">
           <a class="btn btn-sm btn-light" title="View intern profile" aria-label="View intern profile" href="{{ url_for('view_intern_profile', intern_id=intern.id) }}"><i class="bi bi-eye"></i></a>
-          {% if intern.document %}
-          <a class="btn btn-sm btn-light icon-action" title="Download document" aria-label="Download document" href="{{ url_for('download_document', kind='intern', item_id=intern.id) }}"><i class="bi bi-file-earmark-arrow-down"></i></a>
-          {% endif %}
           {% if current_user.role == 'admin' %}
           <a class="btn btn-sm btn-light" title="Edit intern" href="{{ url_for('edit_intern', intern_id=intern.id) }}"><i class="bi bi-pencil"></i></a>
-          <form class="d-inline" method="post" action="{{ url_for('delete_intern', intern_id=intern.id) }}" onsubmit="return confirm('Delete this intern and their tasks?')"><button class="btn btn-sm btn-light text-danger" title="Delete intern"><i class="bi bi-trash3"></i></button></form>
+          <form class="d-inline delete-record-form" method="post" action="{{ url_for('delete_intern', intern_id=intern.id) }}" data-delete-name="{{ intern.name }}" data-delete-message="This will also remove the intern's assigned tasks."><button class="btn btn-sm btn-light text-danger" title="Delete intern"><i class="bi bi-trash3"></i></button></form>
           {% endif %}
         </td>
       </tr>

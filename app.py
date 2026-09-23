@@ -866,6 +866,33 @@ def view_mentors():
     return render_template("mentors.html", mentors=rows, departments=available_departments(interns, mentors))
 
 
+@app.get("/mentors/<mentor_id>")
+def view_mentor_profile(mentor_id):
+    if not role_required("admin"):
+        flash("Only an admin can view mentor profiles.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, mentors = get_data()
+    mentor = next((item for item in mentors if item.get("id") == mentor_id), None)
+    if not mentor:
+        flash("Mentor not found.", "danger")
+        return redirect(url_for("view_mentors"))
+    mentor_interns = [intern_summary(intern, tasks) for intern in interns
+                      if intern.get("assigned_mentor") == mentor_id]
+    mentor_intern_ids_set = {intern.get("id") for intern in mentor_interns}
+    assigned_tasks = [task for task in tasks
+                      if mentor_intern_ids_set.intersection(
+                          task.get("assigned_intern_ids") or [task.get("intern_id")])]
+    task_rows = decorate_tasks(assigned_tasks, interns)
+    completed_tasks = sum(normalize_task_status(task.get("status")) == "Completed" for task in assigned_tasks)
+    total_tasks = len(assigned_tasks)
+    return render_template("mentor_profile.html", mentor=mentor,
+                           departments=mentor_departments(mentor), interns=mentor_interns,
+                           assigned_tasks=task_rows, total_tasks=total_tasks,
+                           completed_tasks=completed_tasks,
+                           pending_tasks=total_tasks - completed_tasks,
+                           progress=round(completed_tasks / total_tasks * 100, 1) if total_tasks else 0)
+
+
 @app.route("/mentors/add", methods=["GET", "POST"])
 def add_mentor():
     if not role_required("admin"):

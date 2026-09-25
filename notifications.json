@@ -128,5 +128,35 @@
     "action": "Uploaded a project ZIP",
     "created_at": "2026-09-23T19:24:04+05:30",
     "read": false
+  },
+  {
+    "id": "71167dde12fa4ab6ad3f0412fd564b67",
+    "recipient_id": "734a1f9632",
+    "task_id": "DFPY01",
+    "task_title": "it manager",
+    "user_name": "desflyer",
+    "action": "Task assigned",
+    "created_at": "2026-09-24T13:08:12+00:00",
+    "read": true
+  },
+  {
+    "id": "fc0d4a77ad844d51833369bf418c6c02",
+    "recipient_id": "734a1f9632",
+    "task_id": "DFPY02",
+    "task_title": "stress detection",
+    "user_name": "desflyer",
+    "action": "Task assigned",
+    "created_at": "2026-09-24T13:08:12+00:00",
+    "read": true
+  },
+  {
+    "id": "11eb72e13afc4828af62eef996065ed5",
+    "recipient_id": "734a1f9632",
+    "task_id": "DFPY01-01",
+    "task_title": "it manager login",
+    "user_name": "atchayasri",
+    "action": "Assigned you a task",
+    "created_at": "2026-09-24T13:08:12+00:00",
+    "read": true
   }
 ]

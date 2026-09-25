@@ -1,58 +1,14 @@
 [
   {
-    "name": "trisha",
-    "email": "trisha@gmail.com",
-    "phone": "66872766",
-    "department": "HR Department",
-    "joining_date": "2026-09-21",
-    "duration_months": 3,
-    "id": "DFIN001",
-    "assigned_mentor": "101",
-    "document": {
-      "filename": "progress-reports_1.pdf",
-      "stored_name": "intern_1e362530f135_progress-reports_1.pdf"
-    },
-    "end_date": "2026-12-21",
-    "employment_status": "Active Intern"
-  },
-  {
-    "name": "surya",
-    "email": "surya@gmail.com",
+    "name": "subash",
+    "email": "subash@gmail.com",
     "phone": "7894561230",
     "department": "Python Development",
-    "joining_date": "2026-09-21",
-    "duration_months": 2,
-    "id": "DFIN002",
-    "assigned_mentor": "101",
-    "end_date": "2026-11-21",
-    "employment_status": "Active Intern"
-  },
-  {
-    "name": "kanmani",
-    "email": "kanmani@gmail.com",
-    "phone": "67814246390",
-    "department": "UI and UX Design",
-    "joining_date": "2026-09-22",
+    "joining_date": "2026-09-14",
     "duration_months": 3,
-    "id": "DFIN003",
-    "assigned_mentor": "101",
-    "document": {
-      "filename": "progress-report-gayathri.pdf",
-      "stored_name": "intern_cf895dd72f47_progress-report-gayathri.pdf"
-    },
-    "end_date": "2026-12-22",
-    "employment_status": "Active Intern"
-  },
-  {
-    "name": "kannan",
-    "email": "kanan@gmail.com",
-    "phone": "944467859",
-    "department": "Python Development",
-    "joining_date": "2026-09-22",
-    "duration_months": 5,
-    "id": "DFIN004",
-    "assigned_mentor": "101",
-    "end_date": "2027-02-22",
+    "id": "DFIN001",
+    "assigned_mentor": "",
+    "end_date": "2026-12-14",
     "employment_status": "Active Intern"
   }
 ]

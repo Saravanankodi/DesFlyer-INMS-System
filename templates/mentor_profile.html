@@ -8,7 +8,7 @@
     <p class="text-muted">Detailed mentor profile, intern assignments, and workload progress.</p>
   </div>
   <div class="d-flex gap-2">
-    <a class="btn btn-primary" href="{{ url_for('download_report', mentor_id=mentor.id) }}"><i class="bi bi-file-earmark-pdf"></i> Download PDF</a>
+    {% if mentor.document %}<a class="btn btn-primary" href="{{ url_for('download_document', kind='mentor', item_id=mentor.id) }}"><i class="bi bi-file-earmark-arrow-down"></i> Download document</a>{% else %}<button class="btn btn-primary" type="button" disabled title="No document uploaded"><i class="bi bi-file-earmark"></i> No document uploaded</button>{% endif %}
     <a class="btn btn-outline-secondary" href="{{ url_for('view_mentors') }}"><i class="bi bi-arrow-left"></i> Back to mentors</a>
   </div>
 </div>
@@ -28,7 +28,7 @@
           <dt class="col-sm-4 text-muted">Phone Number</dt><dd class="col-sm-8">{{ mentor.phone }}</dd>
           <dt class="col-sm-4 text-muted">Departments</dt><dd class="col-sm-8">{{ departments|join(', ') or 'Not set' }}</dd>
           <dt class="col-sm-4 text-muted">Assigned Interns</dt><dd class="col-sm-8">{{ interns|length }}</dd>
-          <dt class="col-sm-4 text-muted">Document</dt><dd class="col-sm-8">{{ 'Available' if mentor.document else 'Not uploaded' }}</dd>
+          <dt class="col-sm-4 text-muted">Document</dt><dd class="col-sm-8">{{ 'Available for download' if mentor.document else 'Not uploaded' }}</dd>
         </dl>
       </div>
     </section>
@@ -60,7 +60,7 @@
   <div class="card-body p-4 pb-2"><span class="eyebrow">Assigned work</span><h2 class="h5 mb-1">Assigned Task List</h2></div>
   <div class="table-responsive"><table class="table align-middle mb-0">
     <thead><tr><th>Task</th><th class="team-member-column">Team Member</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="text-end">View</th></tr></thead>
-    <tbody>{% for task in assigned_tasks %}<tr><td>{{ task.title }}<small class="d-block text-muted">{{ task.id }}</small></td><td class="team-member-column">{{ task.assigned_count }}</td><td>{{ task.deadline_display }}</td><td>{{ task.priority }}</td><td>{{ task.view_status }}</td><td class="text-end"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No tasks assigned yet.</td></tr>{% endfor %}</tbody>
+    <tbody>{% for task in assigned_tasks %}<tr><td>{{ task.title }}<small class="d-block text-muted">{{ task.id }}</small></td><td class="team-member-column">{{ task.assigned_count }}</td><td class="deadline-cell">{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td>{{ task.view_status }}</td><td class="text-end"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No tasks assigned yet.</td></tr>{% endfor %}</tbody>
   </table></div>
 </section>
 {% endblock %}

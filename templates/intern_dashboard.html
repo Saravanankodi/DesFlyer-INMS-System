@@ -8,6 +8,14 @@
 {% endfor %}
 </div>
 
+<!-- Mentor Tasks cards: separate from the Admin task cards above. -->
+<div class="section-title"><div><span class="eyebrow">Mentor work</span><h2>Mentor tasks</h2></div></div>
+<div class="row g-3 mb-4">
+{% for label, value, icon, tone in [('Mentor tasks', mentor_card_stats.tasks, 'list-check', 'violet'),('Completed', mentor_card_stats.completed, 'check-circle-fill', 'green'),('Start', mentor_card_stats.start, 'hourglass-split', 'amber'),('In progress', mentor_card_stats.in_progress, 'arrow-repeat', 'cyan'),('Not completed', mentor_card_stats.not_completed, 'x-circle-fill', 'red'),('Progress', mentor_card_stats.progress ~ '%', 'graph-up-arrow', 'blue')] %}
+<div class="col-6 col-xl-2"><div class="metric-card"><div class="metric-icon {{ tone }}"><i class="bi bi-{{ icon }}"></i></div><strong>{{ value }}</strong><span>{{ label }}</span></div></div>
+{% endfor %}
+</div>
+
 <div class="row g-4 mb-4">
   <div class="col-lg-5"><div class="card dashboard-panel h-100"><div class="card-body p-4"><span class="eyebrow">Our internship</span><h2>{{ intern.name }}</h2>
     <dl class="row small mt-4 mb-0">
@@ -25,16 +33,29 @@
 <div class="section-title"><div><span class="eyebrow">Our work</span><h2>My tasks</h2></div></div>
 <div class="card table-card">
   <div class="table-scroll intern-task-scroll">
-    <table class="table align-middle mb-0"><thead><tr><th>Task</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="table-actions">Actions</th></tr></thead>
+    <table class="table align-middle mb-0"><thead><tr><th>Task ID</th><th>Task</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="table-actions">Actions</th></tr></thead>
     <tbody>
     {% for task in intern.tasks %}
     <tr class="{{ 'overdue-row' if task.overdue else '' }}">
-      <td><strong>{{ task.title }}</strong>{% if task.overdue %}<span class="overdue-label"><i class="bi bi-exclamation-circle-fill"></i> Overdue</span>{% endif %}</td>
-      <td>{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
-      <td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td>
-      <td class="table-actions"><a class="btn btn-sm btn-light icon-action" title="View task" aria-label="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td>
+      <td>{{ task.id }}</td><td><strong>{{ task.title }}</strong>{% if task.overdue %}<span class="overdue-label"><i class="bi bi-exclamation-circle-fill"></i> Overdue</span>{% endif %}</td>
+      <td class="deadline-cell">{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
+      <td>
+        <span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span>
+        {% if task.mentor_pending %}<div class="small text-warning mt-1">Awaiting mentor confirmation</div>{% endif %}
+      </td>
+      <td class="table-actions">
+        <a class="btn btn-sm btn-light icon-action" title="View task" aria-label="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a>
+        <form method="post" action="{{ url_for('update_intern_task_status', task_id=task.id) }}" class="d-inline-flex align-items-center gap-1 ms-1">
+          <select class="form-select form-select-sm" name="status" aria-label="Update task status">
+            {% for status in ['Start', 'In Progress', 'Completed', 'Not Completed'] %}
+            <option value="{{ status }}" {{ 'selected' if task.intern_status|default(task.view_status) == status else '' }}>{{ status }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-sm btn-primary" type="submit" title="Send status to mentor">Update</button>
+        </form>
+      </td>
     </tr>
-    {% else %}<tr><td colspan="5" class="empty-state">No tasks assigned yet.</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="6" class="empty-state">No tasks assigned yet.</td></tr>{% endfor %}
     </tbody></table>
   </div>
 </div>

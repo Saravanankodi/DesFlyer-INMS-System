@@ -2,7 +2,7 @@
 {% block title %}Edit User{% endblock %}
 {% block content %}
 <div class="page-heading"><div><span class="eyebrow">Admin only</span><h1>Edit user</h1><p class="text-muted">Update login details, role, profile, or set a new password.</p></div><a class="btn btn-outline-secondary" href="{{ url_for('user_management') }}"><i class="bi bi-arrow-left"></i> Back</a></div>
-<form method="post" class="card form-card"><div class="card-body p-4 p-lg-5"><div class="row g-4">
+<form method="post" class="card form-card people-form-page"><div class="card-body p-4 p-lg-5"><div class="row g-4">
 <div class="col-md-6"><label class="form-label">Username</label><input class="form-control" name="username" value="{{ user.username }}" required></div>
 <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="{{ user.email }}" required></div>
 <div class="col-md-6"><label class="form-label">Role</label><select class="form-select" id="editRole" name="role" onchange="filterProfiles()" required><option value="admin" {{ 'selected' if user.role=='admin' }}>Admin</option><option value="mentor" {{ 'selected' if user.role=='mentor' }}>Mentor</option><option value="intern" {{ 'selected' if user.role=='intern' }}>Intern</option></select></div>

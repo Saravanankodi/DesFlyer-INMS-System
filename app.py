@@ -1,9 +1,11 @@
 import calendar
 import json
 import re
+import zipfile
 from io import BytesIO
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 from xml.sax.saxutils import escape
 
@@ -22,9 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent
 UPLOADS_DIR = BASE_DIR / "uploads"
 DOC_UPLOAD_DIR = UPLOADS_DIR / "documents"
 PROJECT_UPLOAD_DIR = UPLOADS_DIR / "projects"
+INTERN_FILES_DIR = UPLOADS_DIR / "intern_files"
 UPLOADS_DIR.mkdir(exist_ok=True)
 DOC_UPLOAD_DIR.mkdir(exist_ok=True)
 PROJECT_UPLOAD_DIR.mkdir(exist_ok=True)
+INTERN_FILES_DIR.mkdir(exist_ok=True)
 INTERNS_FILE = BASE_DIR / "interns.json"
 TASKS_FILE = BASE_DIR / "tasks.json"
 MENTORS_FILE = BASE_DIR / "mentors.json"
@@ -86,7 +90,7 @@ app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # Allow large internship p
 
 @app.errorhandler(413)
 def request_entity_too_large(error):
-    flash("The uploaded ZIP is too large. The maximum allowed size is 500 MB.", "danger")
+    flash("The uploaded file is too large. The maximum allowed size is 500 MB.", "danger")
     return redirect(url_for("intern_dashboard"))
 
 
@@ -220,6 +224,10 @@ def admin_user_ids():
 
 def mentor_user_ids_for_task(task, interns):
     users = load_json(USERS_FILE)
+    assigned_mentor = task.get("assigned_mentor")
+    if assigned_mentor:
+        return [user.get("id") for user in users
+                if user.get("role") == "mentor" and user.get("mentor_id") == assigned_mentor]
     assigned_ids = task.get("assigned_intern_ids") or [task.get("intern_id")]
     mentor_ids = {intern.get("assigned_mentor") for intern in interns
                   if intern.get("id") in assigned_ids and intern.get("assigned_mentor")}
@@ -227,23 +235,30 @@ def mentor_user_ids_for_task(task, interns):
             if user.get("role") == "mentor" and user.get("mentor_id") in mentor_ids]
 
 
-def notify_task_assignees(task, interns, actor_name):
+def intern_user_ids_for_task(task, interns):
+    """Return login-user IDs for every intern assigned to a task."""
     users = load_json(USERS_FILE)
     selected_ids = task.get("assigned_intern_ids") or [task.get("intern_id")]
-    recipient_ids = []
-    for intern_id in selected_ids:
-        intern = next((item for item in interns if item.get("id") == intern_id), None)
-        if not intern:
-            continue
-        recipient_ids.extend(user.get("id") for user in users
-                             if user.get("role") == "intern" and user.get("intern_id") == intern_id)
-        recipient_ids.extend(user.get("id") for user in users
-                             if user.get("role") == "mentor" and
-                             user.get("mentor_id") == intern.get("assigned_mentor"))
-    assigned_mentor = task.get("assigned_mentor")
-    if assigned_mentor:
-        recipient_ids.extend(user.get("id") for user in users
-                             if user.get("role") == "mentor" and user.get("mentor_id") == assigned_mentor)
+    selected_ids = {item for item in selected_ids if item}
+    return [user.get("id") for user in users
+            if user.get("role") == "intern" and user.get("intern_id") in selected_ids]
+
+
+def notify_intern_assignees(task, interns, actor_name, action="Task assigned"):
+    """Notify the interns assigned to an admin or mentor task."""
+    notify_users(intern_user_ids_for_task(task, interns), task, actor_name, action)
+
+
+def notify_task_assignees(task, interns, actor_name):
+    """Notify every relevant role when an admin assigns a task.
+
+    Admin-created tasks are relevant to the admin, the assigned mentor, and
+    every assigned intern. Keep the notification recipient logic based on
+    login-account IDs so the bell works consistently for all three roles.
+    """
+    recipient_ids = admin_user_ids()
+    recipient_ids.extend(intern_user_ids_for_task(task, interns))
+    recipient_ids.extend(mentor_user_ids_for_task(task, interns))
     notify_users(recipient_ids, task, actor_name, "Task assigned")
 
 
@@ -300,6 +315,41 @@ def project_path(record):
         return None
     path = PROJECT_UPLOAD_DIR / record["stored_name"]
     return path if path.exists() else None
+
+
+def intern_file_path(record):
+    if not record or not record.get("stored_name"):
+        return None
+    path = INTERN_FILES_DIR / record["stored_name"]
+    return path if path.exists() else None
+
+
+def task_intern_files(task, tasks, interns, user=None):
+    """Return uploaded intern files visible for the current task/user."""
+    user = user or current_user() or {}
+    root = parent_admin_task(task, tasks) or task
+    related = [root] + [item for item in tasks if item.get("parent_task_id") == root.get("id")]
+    # Preserve task order and avoid duplicates.
+    seen_tasks = set()
+    rows = []
+    intern_map = {item.get("id"): item for item in interns}
+    for related_task in related:
+        if related_task.get("id") in seen_tasks:
+            continue
+        seen_tasks.add(related_task.get("id"))
+        for record in related_task.get("intern_files", []) or []:
+            if user.get("role") == "intern" and record.get("intern_id") != user.get("intern_id"):
+                continue
+            if user.get("role") == "mentor":
+                if not mentor_can_access_task(user, related_task, interns):
+                    continue
+            item = dict(record)
+            item["task_id"] = related_task.get("id")
+            item["task_title"] = related_task.get("title", "")
+            item["intern_name"] = item.get("intern_name") or intern_map.get(item.get("intern_id"), {}).get("name", "Unknown intern")
+            rows.append(item)
+    rows.sort(key=lambda item: item.get("uploaded_at", ""), reverse=True)
+    return rows
 
 
 def set_completed_timestamp(task, status):
@@ -363,11 +413,24 @@ def get_data():
     mentors = load_json(MENTORS_FILE)
     mentors_changed = False
     for mentor in mentors:
+        # Preserve a mentor's complete multi-department assignment.
+        # Only migrate old records that stored departments as a single string
+        # (or only had the legacy singular "department" field).
+        raw_departments = mentor.get("departments")
+        if isinstance(raw_departments, list):
+            # Keep the stored list intact; selecting/assigning an intern must
+            # never remove any of the mentor's departments.
+            continue
+
         departments = mentor_departments(mentor)
-        if mentor.get("departments") != departments or mentor.get("department", "") != (departments[0] if departments else ""):
+        if departments:
             mentor["departments"] = departments
-            mentor["department"] = departments[0] if departments else ""
+            # Keep the legacy field for older parts of the application, but do
+            # not use it to overwrite the multi-department list.
+            if not mentor.get("department"):
+                mentor["department"] = departments[0]
             mentors_changed = True
+
     if mentors_changed:
         save_json(MENTORS_FILE, mentors)
     return interns, tasks, mentors
@@ -390,8 +453,10 @@ def normalize_task_status(value):
 
 
 def task_status_for_role(task, role):
+    # Intern "MY TASKS" contains only Admin-created tasks, so its
+    # displayed status must come from the Admin task status.
     if role == "intern":
-        return normalize_task_status(task.get("intern_status", task.get("status", "Start")))
+        return normalize_task_status(task.get("status", "Start"))
     if role == "mentor" and task.get("mentor_pending"):
         return normalize_task_status(task.get("mentor_pending_status", task.get("status", "Start")))
     return normalize_task_status(task.get("status", "Start"))
@@ -404,17 +469,20 @@ def is_overdue(task):
         return False
 
 
-def is_admin_task(task):
-    """Return True for tasks created directly by Admin, not Mentor subtasks."""
-    return task.get("created_by_role", "admin") != "mentor" and not task.get("parent_task_id")
-
-
 def intern_summary(intern, tasks, role="admin"):
+    # Intern "MY TASKS" must contain only tasks assigned by Admin.
+    # Mentor-created subtasks are displayed separately in /intern/mentor-tasks.
     assigned = [{**task, "overdue": is_overdue(task),
                  "deadline_display": format_task_date(task.get("deadline")),
                  "view_status": task_status_for_role(task, role)} for task in tasks
                 if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])
-                and (role != "intern" or is_admin_task(task))]
+                and (
+                    role != "intern"
+                    or (
+                        task.get("created_by_role", "admin") != "mentor"
+                        and not task.get("parent_task_id")
+                    )
+                )]
     completed = sum(task["view_status"] == "Completed" for task in assigned)
     start_tasks = sum(task["view_status"] == "Start" for task in assigned)
     not_completed_tasks = sum(task["view_status"] == "Not Completed" for task in assigned)
@@ -495,7 +563,8 @@ def profile_name(user, interns, mentors):
 
 
 def current_user():
-    return session.get("user")
+    user = session.get("user")
+    return user if isinstance(user, dict) else {}
 
 
 def login_required():
@@ -515,17 +584,34 @@ def mentor_intern_ids(user, interns):
     return {i.get("id") for i in interns if i.get("assigned_mentor") == user.get("mentor_id")}
 
 
+def mentor_can_access_task(user, task, interns):
+    """Task assignment is the source of truth for mentor access.
+    Legacy tasks without assigned_mentor fall back to the intern's mentor.
+    """
+    if not user or user.get("role") != "mentor" or not task:
+        return False
+    mentor_id = user.get("mentor_id")
+    assigned_mentor = task.get("assigned_mentor")
+    if assigned_mentor:
+        return assigned_mentor == mentor_id
+    assigned_ids = set(task.get("assigned_intern_ids") or [task.get("intern_id")])
+    return bool(mentor_intern_ids(user, interns).intersection(assigned_ids))
+
+
 @app.context_processor
 def navigation_data():
     user = current_user()
     notifications = []
     if user:
+        # Show only currently unread notifications in the notification panel.
+        # Read/old notification history is intentionally hidden from the UI.
         notifications = [item for item in load_json(NOTIFICATIONS_FILE)
-                         if item.get("recipient_id") == user.get("id")]
+                         if item.get("recipient_id") == user.get("id")
+                         and not item.get("read", False)]
         notifications.sort(key=lambda item: item.get("created_at", ""), reverse=True)
     return {"current_year": date.today().year, "current_user": user,
             "notifications": notifications[:12],
-            "unread_notifications": sum(not item.get("read", False) for item in notifications)}
+            "unread_notifications": len(notifications)}
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -539,8 +625,6 @@ def login():
         selected_role = request.form.get("role", "").strip().casefold()
 
         users = load_json(USERS_FILE)
-        user = find_user(identifier, users)
-       
         user = find_user(identifier, users)
 
         if user and user.get("role", "").casefold() == selected_role and check_password(user.get("password", ""), password):
@@ -690,11 +774,17 @@ def dashboard():
         flash("Admin access is required.", "danger")
         return redirect(url_for("home"))
     interns, tasks, mentors = get_data()
-    completed = sum(normalize_task_status(task.get("status")) == "Completed" for task in tasks)
-    start = sum(normalize_task_status(task.get("status")) == "Start" for task in tasks)
-    not_completed = sum(normalize_task_status(task.get("status")) == "Not Completed" for task in tasks)
-    in_progress = sum(normalize_task_status(task.get("status")) == "In Progress" for task in tasks)
-    overdue = sum(is_overdue(task) for task in tasks)
+    # The Admin Dashboard task pipeline should show only admin-assigned tasks.
+    # Mentor-created subtasks stay in the mentor workflow.
+    admin_tasks = [
+        task for task in tasks
+        if task.get("created_by_role", "admin") != "mentor" and not task.get("parent_task_id")
+    ]
+    completed = sum(normalize_task_status(task.get("status")) == "Completed" for task in admin_tasks)
+    start = sum(normalize_task_status(task.get("status")) == "Start" for task in admin_tasks)
+    not_completed = sum(normalize_task_status(task.get("status")) == "Not Completed" for task in admin_tasks)
+    in_progress = sum(normalize_task_status(task.get("status")) == "In Progress" for task in admin_tasks)
+    overdue = sum(is_overdue(task) for task in admin_tasks)
     active_interns = sum(intern.get("employment_status") == "Active Intern" for intern in interns)
     past_employees = sum(intern.get("employment_status") == "Past Employee" for intern in interns)
     total_departments = len({intern.get("department") for intern in interns if intern.get("department")})
@@ -704,12 +794,12 @@ def dashboard():
         key=lambda i: i.get("latest_completed_at", ""), reverse=True
     )
     return render_template("dashboard.html", interns=intern_summaries, recent_completed=recent_completed,
-                           tasks=decorate_tasks(tasks, interns), total_interns=len(interns),
-                           mentors=mentors, total_mentors=len(mentors), total_tasks=len(tasks),
+                           tasks=decorate_tasks(admin_tasks, interns), total_interns=len(interns),
+                           mentors=mentors, total_mentors=len(mentors), total_tasks=len(admin_tasks),
                            completed=completed, start=start, not_completed=not_completed, in_progress=in_progress,
                            overdue=overdue, active_interns=active_interns,
                            past_employees=past_employees, total_departments=total_departments,
-                           progress=round(completed / len(tasks) * 100, 1) if tasks else 0)
+                           progress=round(completed / len(admin_tasks) * 100, 1) if admin_tasks else 0)
 
 
 @app.route("/mentor/dashboard")
@@ -720,7 +810,7 @@ def mentor_dashboard():
     interns, tasks, _ = get_data()
     ids = mentor_intern_ids(current_user(), interns)
     my_interns = [intern_summary(i, tasks, role="mentor") for i in interns if i.get("id") in ids]
-    my_tasks = [t for t in tasks if ids.intersection(t.get("assigned_intern_ids", [t.get("intern_id")]))]
+    my_tasks = [t for t in tasks if mentor_can_access_task(current_user(), t, interns)]
     admin_tasks = [t for t in my_tasks if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")]
     mentor_subtasks = [t for t in my_tasks if t.get("created_by_role") == "mentor" or t.get("parent_task_id")]
     parent_titles = {t.get("id"): t.get("title", "") for t in tasks}
@@ -756,9 +846,27 @@ def mentor_dashboard():
     # still see all interns assigned to them even when those interns have
     # no tasks yet.
     mentor_card_stats["interns"] = len(ids)
+
+    mentor_files = []
+    for row in my_tasks:
+        for record in row.get("intern_files", []) or []:
+            if record.get("intern_id") in ids:
+                item = dict(record)
+                item["task_id"] = row.get("id")
+                item["task_title"] = row.get("title", "")
+                item["parent_task_id"] = row.get("parent_task_id") or (row.get("id") if row.get("created_by_role", "admin") == "admin" else None)
+                parent = parent_admin_task(row, tasks)
+                item["admin_task_id"] = parent.get("id") if parent else ""
+                item["admin_task_title"] = parent.get("title") if parent else ""
+                intern = next((i for i in interns if i.get("id") == record.get("intern_id")), None)
+                item["intern_name"] = record.get("intern_name") or (intern.get("name") if intern else "Unknown intern")
+                mentor_files.append(item)
+    mentor_files.sort(key=lambda item: item.get("uploaded_at", ""), reverse=True)
+    mentor_admin_tasks = [t for t in admin_tasks if t.get("id")]
     return render_template("mentor_dashboard.html", interns=my_interns,
                            tasks=decorate_tasks(my_tasks, interns), admin_tasks=admin_tasks, mentor_subtasks=mentor_subtasks,
                            admin_card_stats=admin_card_stats, mentor_card_stats=mentor_card_stats,
+                           mentor_files=mentor_files, mentor_admin_tasks=mentor_admin_tasks,
                            total_tasks=len(my_tasks), completed=sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks),
                            priorities=PRIORITIES, statuses=STATUSES,
                            progress=round(sum(normalize_task_status(t.get("status")) == "Completed" for t in my_tasks) / len(my_tasks) * 100, 1) if my_tasks else 0)
@@ -777,7 +885,28 @@ def intern_dashboard():
         return redirect(url_for("login"))
     summary = intern_summary(intern, tasks, role="intern")
     mentor = next((m for m in mentors if m.get("id") == intern.get("assigned_mentor")), None)
-    return render_template("intern_dashboard.html", intern=summary, mentor=mentor)
+
+    # Mentor Tasks are kept separate from the Admin task cards. These are
+    # only mentor-created subtasks assigned to the logged-in intern.
+    mentor_tasks = [
+        {**task, "view_status": normalize_task_status(task.get("status", "Start"))}
+        for task in tasks
+        if intern["id"] in task.get("assigned_intern_ids", [task.get("intern_id")])
+        and (task.get("created_by_role") == "mentor" or task.get("parent_task_id"))
+    ]
+    mentor_statuses = [task["view_status"] for task in mentor_tasks]
+    mentor_total = len(mentor_tasks)
+    mentor_completed = mentor_statuses.count("Completed")
+    mentor_card_stats = {
+        "tasks": mentor_total,
+        "completed": mentor_completed,
+        "start": mentor_statuses.count("Start"),
+        "in_progress": mentor_statuses.count("In Progress"),
+        "not_completed": mentor_statuses.count("Not Completed"),
+        "progress": round(mentor_completed / mentor_total * 100, 1) if mentor_total else 0,
+    }
+    return render_template("intern_dashboard.html", intern=summary, mentor=mentor,
+                           mentor_card_stats=mentor_card_stats)
 
 
 @app.route("/intern/mentor-tasks")
@@ -853,16 +982,18 @@ def add_intern():
         return redirect(url_for("home"))
     interns, _, mentors = get_data()
     if request.method == "POST":
-        intern = {field: request.form.get(field, "").strip() for field in
-              ("name", "email", "phone", "department", "joining_date", "duration_months")}
+        intern: dict[str, object] = {
+            field: request.form.get(field, "").strip()
+            for field in ("name", "email", "phone", "department", "joining_date", "duration_months")
+        }
         intern["id"] = next_profile_id("DFIN", interns)
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
         uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "intern")
         if uploaded:
             intern["document"] = uploaded
         try:
-            duration_months = int(intern["duration_months"])
-            end_date = calculate_end_date(intern["joining_date"], duration_months)
+            duration_months = int(str(intern.get("duration_months", "0")))
+            end_date = calculate_end_date(str(intern.get("joining_date", "")), duration_months)
         except (TypeError, ValueError):
             duration_months = 0
             end_date = ""
@@ -1092,17 +1223,21 @@ def view_tasks():
         return redirect(url_for("home"))
     interns, tasks, _ = get_data()
     if role_required("mentor"):
-        ids = mentor_intern_ids(current_user(), interns)
-        mentor_id = current_user().get("mentor_id")
-        visible = [t for t in tasks if t.get("assigned_mentor") == mentor_id or ids.intersection(
-            t.get("assigned_intern_ids", [t.get("intern_id")]))]
+        visible = [t for t in tasks if mentor_can_access_task(current_user(), t, interns)]
         admin_tasks = [t for t in visible if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")]
         mentor_subtasks = [t for t in visible if t.get("created_by_role") == "mentor" or t.get("parent_task_id")]
         return render_template("tasks.html", is_mentor=True,
                                tasks=decorate_tasks(visible, interns),
                                admin_tasks=decorate_tasks(admin_tasks, interns),
                                mentor_subtasks=decorate_tasks(mentor_subtasks, interns))
-    return render_template("tasks.html", is_mentor=False, tasks=decorate_tasks(tasks, interns),
+    # Admins should see only tasks assigned/created by the admin.
+    # Mentor-created subtasks must remain in the mentor workflow and must not
+    # appear in the main admin Tasks list.
+    admin_tasks = [
+        t for t in tasks
+        if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")
+    ]
+    return render_template("tasks.html", is_mentor=False, tasks=decorate_tasks(admin_tasks, interns),
                            admin_tasks=[], mentor_subtasks=[])
 
 
@@ -1117,12 +1252,11 @@ def view_task(task_id):
         return redirect(url_for("view_tasks"))
     assigned_ids = task.get("assigned_intern_ids", [task.get("intern_id")])
     user = current_user()
-    if user.get("role") == "mentor" and not mentor_intern_ids(user, interns).intersection(assigned_ids):
+    if user.get("role") == "mentor" and not mentor_can_access_task(user, task, interns):
         flash("You cannot view this task.", "danger")
         return redirect(url_for("view_tasks"))
-    if user.get("role") == "intern" and (
-            user.get("intern_id") not in assigned_ids or not is_admin_task(task)):
-        flash("Mentor-assigned subtasks are not available in My Tasks.", "danger")
+    if user.get("role") == "intern" and user.get("intern_id") not in assigned_ids:
+        flash("You cannot view this task.", "danger")
         return redirect(url_for("intern_dashboard"))
     intern_by_id = {item.get("id"): item for item in interns}
     mentor_names = {mentor["id"]: mentor["name"] for mentor in mentors}
@@ -1137,8 +1271,9 @@ def view_task(task_id):
     decorated["parent_final_project_file"] = parent.get("final_project_file") if parent else None
     decorated["intern_project_file"] = task.get("intern_project_file")
     decorated["final_project_file"] = task.get("final_project_file")
+    intern_files = task_intern_files(task, tasks, interns, user)
     return render_template("task_detail.html", task=decorated,
-                           assigned_interns=assigned_interns, parent_task=parent)
+                           assigned_interns=assigned_interns, parent_task=parent, intern_files=intern_files)
 
 
 @app.route("/tasks/add", methods=["GET", "POST"])
@@ -1159,8 +1294,10 @@ def assign_task():
         if task_type == "Individual Work":
             selected_ids = [intern_id] if intern_id else []
         department = request.form.get("department", "").strip()
-        if role_required("admin") and assigned_mentor and not any(m.get("id") == assigned_mentor for m in mentors):
+        selected_mentor = next((m for m in mentors if m.get("id") == assigned_mentor), None)
+        if role_required("admin") and assigned_mentor and not selected_mentor:
             assigned_mentor = ""
+            selected_mentor = None
         project_id = request.form.get("project_id", "").strip()
         title = request.form.get("title", "").strip()
         start_date = request.form.get("start_date", "").strip()
@@ -1184,12 +1321,14 @@ def assign_task():
             flash("Choose an admin-created project before assigning work.", "danger")
         elif role_required("mentor") and department not in mentor_depts:
             flash("You can only assign work in your assigned departments.", "danger")
-        elif role_required("mentor") and parent_project.get("department", "") not in mentor_depts:
+        elif role_required("mentor") and parent_project and parent_project.get("department", "") not in mentor_depts:
             flash("The selected admin task is outside your assigned departments.", "danger")
         elif task_type not in ("Individual Work", "Team Work"):
             flash("Select a valid task type.", "danger")
         elif role_required("admin") and not assigned_mentor:
             flash("Select a mentor for this task.", "danger")
+        elif role_required("admin") and department not in mentor_departments(selected_mentor):
+            flash("The selected mentor is not assigned to this department.", "danger")
         elif not department or not selected_ids or not title or not start_date or not request.form.get("deadline", ""):
             flash("Select a department and at least one intern, then provide a title, starting date, and deadline.", "danger")
         elif any(item not in valid_ids for item in selected_ids):
@@ -1199,49 +1338,53 @@ def assign_task():
         elif task_type == "Individual Work" and len(selected_ids) != 1:
             flash("Individual Work must have exactly one intern selected.", "danger")
         else:
-            # Admin tasks keep the department-based ID. Mentor subtasks get a
-            # child ID under their selected admin task, one ID per intern.
+            # A Team Work task is ONE task with multiple assigned interns.
+            # Do not create one separate Individual Work record per team member.
             if role_required("mentor"):
-                new_ids = next_subtask_ids(parent_project.get("id"), selected_ids, tasks)
+                parent_id = parent_project.get("id") if parent_project else ""
+                generated_id = next_subtask_id(parent_id, tasks)
             else:
-                new_ids = [task_id_for_department(department, tasks)]
+                generated_id = task_id_for_department(department, tasks)
 
-            if not new_ids[0] or any(any(existing.get("id", "").casefold() == new_id.casefold() for existing in tasks)
-                                     for new_id in new_ids):
+            if not generated_id or any(existing.get("id", "").casefold() == generated_id.casefold() for existing in tasks):
                 flash("A generated Task ID already exists. Please try again.", "danger")
             else:
-                created = []
-                for item_id, generated_id in zip(selected_ids, new_ids):
-                    task = {
-                        "id": generated_id,
-                        "intern_id": item_id,
-                        "task_type": task_type,
-                        "department": department,
-                        "title": title,
-                        "description": request.form.get("description", "").strip(),
-                        "start_date": start_date,
-                        "deadline": request.form.get("deadline", ""),
-                        "priority": request.form.get("priority", "Medium"),
-                        "status": normalize_task_status(request.form.get("status", "Start")),
-                        "intern_status": normalize_task_status(request.form.get("status", "Start")),
-                        "mentor_status": normalize_task_status(request.form.get("status", "Start")),
-                        "mentor_pending_status": None,
-                        "mentor_pending": False,
-                        "created_by_role": current_user().get("role"),
-                        "assigned_mentor": assigned_mentor if role_required("admin") else (parent_project.get("assigned_mentor", "") if parent_project else ""),
-                        "parent_task_id": parent_project.get("id") if parent_project else None,
-                        "parent_task_title": parent_project.get("title", "") if parent_project else "",
-                        "assigned_intern_ids": [item_id],
-                        "assigned_names": [next(item["name"] for item in interns if item["id"] == item_id)],
-                    }
-                    set_completed_timestamp(task, task["status"])
-                    tasks.append(task)
-                    created.append(task)
-
+                task = {
+                    "id": generated_id,
+                    "intern_id": selected_ids[0],
+                    "task_type": task_type,
+                    "department": department,
+                    "title": title,
+                    "description": request.form.get("description", "").strip(),
+                    "start_date": start_date,
+                    "deadline": request.form.get("deadline", ""),
+                    "priority": request.form.get("priority", "Medium"),
+                    "status": normalize_task_status(request.form.get("status", "Start")),
+                    "intern_status": normalize_task_status(request.form.get("status", "Start")),
+                    "mentor_status": normalize_task_status(request.form.get("status", "Start")),
+                    "mentor_pending_status": None,
+                    "mentor_pending": False,
+                    "created_by_role": current_user().get("role"),
+                    "assigned_mentor": assigned_mentor if role_required("admin") else (parent_project.get("assigned_mentor", "") if parent_project else ""),
+                    "parent_task_id": parent_project.get("id") if parent_project else None,
+                    "parent_task_title": parent_project.get("title", "") if parent_project else "",
+                    "assigned_intern_ids": selected_ids,
+                    "assigned_names": [next(item["name"] for item in interns if item["id"] == item_id) for item_id in selected_ids],
+                }
+                set_completed_timestamp(task, task["status"])
+                tasks.append(task)
                 save_json(TASKS_FILE, tasks)
+
+                actor_name = current_user().get("username", "Admin")
                 if current_user().get("role") == "admin":
-                    for task in created:
-                        notify_task_assignees(task, interns, current_user().get("username", "Admin"))
+                    # Admin-created tasks notify admin, assigned mentor, and every assigned intern.
+                    notify_task_assignees(task, interns, actor_name)
+                else:
+                    # Mentor-created subtasks notify admin, the assigned mentor, and every assigned intern.
+                    recipient_ids = admin_user_ids()
+                    recipient_ids.extend(intern_user_ids_for_task(task, interns))
+                    recipient_ids.extend(mentor_user_ids_for_task(task, interns))
+                    notify_users(recipient_ids, task, actor_name, "Task assigned")
                 flash("Task assigned successfully.", "success")
                 return redirect(url_for("view_tasks"))
     projects = [p for p in tasks if p.get("created_by_role", "admin") == "admin" and p.get("department", "") in mentor_depts] if role_required("mentor") else []
@@ -1274,10 +1417,13 @@ def edit_task(task_id):
     if task is None:
         flash("Task not found.", "danger")
         return redirect(url_for("view_tasks"))
-    if role_required("mentor") and not mentor_intern_ids(current_user(), all_interns).intersection(
-            task.get("assigned_intern_ids", [task.get("intern_id")])):
-        flash("You cannot edit this task.", "danger")
-        return redirect(url_for("view_tasks"))
+    if role_required("mentor"):
+        if task.get("created_by_role", "admin") != "mentor" or not task.get("parent_task_id"):
+            flash("Admin-created tasks are view-only for mentors. Create or edit a mentor subtask instead.", "danger")
+            return redirect(url_for("view_tasks"))
+        if not mentor_can_access_task(current_user(), task, all_interns):
+            flash("You cannot edit this task.", "danger")
+            return redirect(url_for("view_tasks"))
     interns = all_interns
     if role_required("mentor"):
         interns = [i for i in all_interns if i.get("id") in mentor_intern_ids(current_user(), all_interns)]
@@ -1293,11 +1439,13 @@ def edit_task(task_id):
         department = request.form.get("department", "").strip()
         project_id = request.form.get("project_id", "").strip()
         assigned_mentor = request.form.get("assigned_mentor", "").strip() if role_required("admin") else task.get("assigned_mentor", "")
-        if role_required("admin") and assigned_mentor and not any(m.get("id") == assigned_mentor for m in mentors):
+        selected_mentor = next((m for m in mentors if m.get("id") == assigned_mentor), None)
+        if role_required("admin") and assigned_mentor and not selected_mentor:
             assigned_mentor = ""
+            selected_mentor = None
         if role_required("mentor"):
             project = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
-            if project:
+            if project and project.get("id") != task.get("id"):
                 task["parent_task_id"] = project_id
                 task["parent_task_title"] = project.get("title", "")
                 # Keep an edited mentor subtask synchronized with the Admin
@@ -1324,9 +1472,11 @@ def edit_task(task_id):
         selected_parent = next((p for p in tasks if p.get("id") == project_id and p.get("created_by_role", "admin") == "admin"), None)
         if role_required("admin") and not assigned_mentor:
             flash("Select a mentor for this task.", "danger")
-        elif role_required("mentor") and (not project_id or not selected_parent):
-            flash("Choose an admin-created project before editing this task.", "danger")
-        elif role_required("mentor") and (department not in mentor_depts or selected_parent.get("department", "") not in mentor_depts):
+        elif role_required("admin") and department not in mentor_departments(selected_mentor):
+            flash("The selected mentor is not assigned to this department.", "danger")
+        elif role_required("mentor") and (not project_id or not selected_parent or selected_parent.get("id") == task.get("id")):
+            flash("Choose a different admin-created parent project before editing this task.", "danger")
+        elif role_required("mentor") and (department not in mentor_depts or (selected_parent and selected_parent.get("department", "") not in mentor_depts)):
             flash("You can only edit work in your assigned departments.", "danger")
         elif task_type not in ("Individual Work", "Team Work") or not selected_ids or any(item not in {i.get("id") for i in active_interns} for item in selected_ids):
             flash("You cannot assign this task to that intern.", "danger")
@@ -1370,8 +1520,14 @@ def delete_task(task_id):
     task = next((t for t in tasks if t.get("id") == task_id), None)
     if task is None:
         flash("Task not found.", "danger")
-    elif role_required("mentor") and not mentor_intern_ids(current_user(), interns).intersection(task.get("assigned_intern_ids", [task.get("intern_id")])):
-        flash("You cannot delete this task.", "danger")
+    elif role_required("mentor"):
+        if task.get("created_by_role", "admin") != "mentor" or not task.get("parent_task_id"):
+            flash("Admin-created tasks cannot be deleted by mentors.", "danger")
+        elif not mentor_can_access_task(current_user(), task, interns):
+            flash("You cannot delete this task.", "danger")
+        else:
+            save_json(TASKS_FILE, [t for t in tasks if t.get("id") != task_id])
+            flash("Mentor subtask deleted.", "success")
     else:
         save_json(TASKS_FILE, [t for t in tasks if t.get("id") != task_id])
         flash("Task deleted.", "success")
@@ -1386,9 +1542,7 @@ def update_intern_task_status(task_id):
     interns, tasks, _ = get_data()
     user = current_user()
     task = next((t for t in tasks if t.get("id") == task_id), None)
-    if (task is None
-            or user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")])
-            or not is_admin_task(task)):
+    if task is None or user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")]):
         flash("Task not found or access denied.", "danger")
         return redirect(url_for("intern_dashboard"))
     status = request.form.get("status", "").strip()
@@ -1417,8 +1571,7 @@ def confirm_intern_task_status(task_id):
     if task is None:
         flash("Task not found.", "danger")
         return redirect(url_for("mentor_dashboard"))
-    assigned = set(task.get("assigned_intern_ids") or [task.get("intern_id")])
-    if not mentor_intern_ids(current_user(), interns).intersection(assigned):
+    if not mentor_can_access_task(current_user(), task, interns):
         flash("You cannot confirm this task.", "danger")
         return redirect(url_for("mentor_dashboard"))
     if not task.get("mentor_pending"):
@@ -1434,6 +1587,12 @@ def confirm_intern_task_status(task_id):
     else:
         task.pop("completed_at", None)
     save_json(TASKS_FILE, tasks)
+    # Confirmations are relevant to the admin and the intern who submitted the
+    # status, so both roles receive a notification in their dashboard bell.
+    mentor_name = current_user().get("username", "Mentor")
+    recipient_ids = admin_user_ids()
+    recipient_ids.extend(intern_user_ids_for_task(task, interns))
+    notify_users(recipient_ids, task, mentor_name, f"Confirmed status as {confirmed}")
     flash("Intern status confirmed. The admin view has been updated.", "success")
     return redirect(url_for("mentor_dashboard"))
 
@@ -1442,13 +1601,20 @@ def confirm_intern_task_status(task_id):
 def mark_notification_read(notification_id):
     if not login_required():
         return redirect(url_for("login"))
+
+    # "Mark as read" removes that individual notification permanently
+    # from the current user's notification list.
     notifications = load_json(NOTIFICATIONS_FILE)
-    for notification in notifications:
-        if (notification.get("id") == notification_id and
-                notification.get("recipient_id") == current_user().get("id")):
-            notification["read"] = True
-            break
-    save_json(NOTIFICATIONS_FILE, notifications)
+    user_id = current_user().get("id")
+    updated_notifications = [
+        notification for notification in notifications
+        if not (notification.get("id") == notification_id
+                and notification.get("recipient_id") == user_id)
+    ]
+
+    if len(updated_notifications) != len(notifications):
+        save_json(NOTIFICATIONS_FILE, updated_notifications)
+
     return redirect(request.referrer or url_for("home"))
 
 
@@ -1688,36 +1854,246 @@ def download_report():
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
 
 
-@app.post("/intern/tasks/<task_id>/upload")
-def upload_project(task_id):
+@app.post("/intern/tasks/<task_id>/files/upload")
+def upload_intern_file(task_id):
     if not role_required("intern"):
-        flash("Only interns can upload project files.", "danger")
+        flash("Only interns can upload files to a mentor.", "danger")
         return redirect(url_for("home"))
     interns, tasks, _ = get_data()
     user = current_user()
     task = next((t for t in tasks if t.get("id") == task_id), None)
-    if (task is None
-            or user.get("intern_id") not in (task.get("assigned_intern_ids") or [task.get("intern_id")])
-            or not is_admin_task(task)):
+    assigned = set(task.get("assigned_intern_ids") or [task.get("intern_id")]) if task else set()
+    if task is None or user.get("intern_id") not in assigned:
         flash("Task not found or access denied.", "danger")
         return redirect(url_for("intern_dashboard"))
-    uploaded = save_upload(request.files.get("project_file"), PROJECT_UPLOAD_DIR, task_id)
+    file_storage = request.files.get("mentor_file")
+    uploaded: dict[str, Any] = save_upload(file_storage, INTERN_FILES_DIR, f"{task_id}_{user.get('intern_id', 'intern')}") or {}
     if not uploaded:
-        flash("Choose a ZIP project file to upload.", "danger")
-    elif not uploaded["filename"].lower().endswith(".zip"):
-        path = PROJECT_UPLOAD_DIR / uploaded["stored_name"]
-        path.unlink(missing_ok=True)
-        flash("Only .zip project files are accepted.", "danger")
+        flash("Choose a file to upload.", "danger")
+        return redirect(url_for("view_task", task_id=task_id))
+    uploaded.update({
+        "id": uuid4().hex,
+        "task_id": task_id,
+        "intern_id": user.get("intern_id"),
+        "intern_name": next((i.get("name") for i in interns if i.get("id") == user.get("intern_id")), user.get("username", "Intern")),
+        "uploaded_at": notification_timestamp(),
+    })
+    task.setdefault("intern_files", []).append(uploaded)
+    save_json(TASKS_FILE, tasks)
+    mentor_ids = mentor_user_ids_for_task(task, interns)
+    notify_users(mentor_ids, task, user.get("username", "Intern"), f"Uploaded file: {uploaded['filename']}")
+    flash(f"{uploaded['filename']} uploaded to your mentor successfully.", "success")
+    return redirect(url_for("view_task", task_id=task_id))
+
+
+@app.get("/mentor/tasks/<task_id>/files/<file_id>/download")
+def download_intern_file(task_id, file_id):
+    user = current_user()
+    if not user or user.get("role") not in {"mentor", "intern"}:
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    task = next((t for t in tasks if t.get("id") == task_id), None)
+    if not task:
+        flash("Task not found.", "danger")
+        return redirect(url_for("home"))
+    if user.get("role") == "mentor":
+        if not mentor_can_access_task(user, task, interns):
+            flash("You cannot access this file.", "danger")
+            return redirect(url_for("mentor_dashboard"))
     else:
-        task["intern_project_file"] = uploaded
-        task.pop("project_file", None)
+        if user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")]):
+            flash("You cannot access this file.", "danger")
+            return redirect(url_for("intern_dashboard"))
+    record = next((item for item in task.get("intern_files", []) or [] if item.get("id") == file_id), None)
+    if not record:
+        flash("File not found.", "danger")
+        return redirect(request.referrer or url_for("home"))
+    path = intern_file_path(record)
+    if not path:
+        flash("The uploaded file is no longer available.", "danger")
+        return redirect(request.referrer or url_for("home"))
+    return send_file(path, as_attachment=True, download_name=record.get("filename", path.name))
+
+
+@app.post("/mentor/tasks/<task_id>/files/<file_id>/delete")
+def delete_intern_file(task_id, file_id):
+    if not role_required("mentor"):
+        flash("Only mentors can delete intern files.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    user = current_user()
+    task = next((t for t in tasks if t.get("id") == task_id), None)
+    if not task:
+        flash("Task not found.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    if not mentor_can_access_task(user, task, interns):
+        flash("You cannot delete files from this task.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    files = task.get("intern_files", []) or []
+    record = next((item for item in files if item.get("id") == file_id), None)
+    if not record:
+        flash("File not found.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    path = intern_file_path(record)
+    if path:
+        path.unlink(missing_ok=True)
+    task["intern_files"] = [item for item in files if item.get("id") != file_id]
+    save_json(TASKS_FILE, tasks)
+    flash(f"{record.get('filename', 'File')} deleted successfully.", "success")
+    return redirect(request.referrer or url_for("mentor_dashboard"))
+
+
+@app.post("/mentor/admin-tasks/<task_id>/collect-submit")
+def collect_and_submit_files(task_id):
+    if not role_required("mentor"):
+        flash("Only mentors can submit collected intern files.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    user = current_user()
+    parent = next((t for t in tasks if t.get("id") == task_id and t.get("created_by_role", "admin") == "admin"), None)
+    if not parent:
+        flash("Admin task not found.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    if not mentor_can_access_task(user, parent, interns):
+        flash("You cannot submit files for this admin task.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    related = [parent] + [t for t in tasks if t.get("parent_task_id") == parent.get("id")]
+    selected_ids = {str(value) for value in request.form.getlist("file_ids") if value}
+    entries = []
+    allowed_intern_ids = set()
+    for row in related:
+        allowed_intern_ids.update(row.get("assigned_intern_ids") or [row.get("intern_id")])
+    for row in related:
+        for record in row.get("intern_files", []) or []:
+            if record.get("intern_id") not in allowed_intern_ids:
+                continue
+            if selected_ids and str(record.get("id")) not in selected_ids:
+                continue
+            path = intern_file_path(record)
+            if path:
+                entries.append((row, record, path))
+    if not entries:
+        if selected_ids:
+            flash("Choose at least one available intern file to upload to Admin.", "warning")
+        else:
+            flash("No intern files are available to collect for this admin task.", "warning")
+        return redirect(url_for("view_task", task_id=parent.get("id")))
+    stored_name = f"final_{parent.get('id', 'project')}_{uuid4().hex[:10]}.zip"
+    zip_path = PROJECT_UPLOAD_DIR / stored_name
+    intern_map = {i.get("id"): i.get("name", "Intern") for i in interns}
+    used_names = set()
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for row, record, path in entries:
+            intern_name = secure_filename(intern_map.get(record.get("intern_id"), record.get("intern_name", "Intern"))) or "Intern"
+            task_folder = secure_filename(row.get("id", "task")) or "task"
+            filename = secure_filename(record.get("filename", path.name)) or path.name
+            arcname = f"{intern_name}/{task_folder}/{filename}"
+            base_arcname = arcname
+            counter = 2
+            while arcname in used_names:
+                stem, dot, suffix = base_arcname.rpartition(".")
+                arcname = f"{stem}_{counter}{dot}{suffix}" if dot else f"{base_arcname}_{counter}"
+                counter += 1
+            used_names.add(arcname)
+            archive.write(path, arcname=arcname)
+    old_final = project_path(parent.get("final_project_file"))
+    if old_final and old_final != zip_path:
+        old_final.unlink(missing_ok=True)
+    parent["final_project_file"] = {"filename": f"{parent.get('id', 'task')}_final_submission.zip", "stored_name": stored_name}
+    parent["final_project_submitted_by"] = user.get("username", "Mentor")
+    parent["final_project_submitted_at"] = notification_timestamp()
+    parent["final_project_source"] = "Collected intern files"
+    save_json(TASKS_FILE, tasks)
+    notify_users(admin_user_ids(), parent, user.get("username", "Mentor"), "Submitted the collected intern files as a single ZIP")
+    if selected_ids:
+        flash("Selected intern files were collected and submitted to the admin as one ZIP.", "success")
+    else:
+        flash("All available intern files were collected and submitted to the admin as one ZIP.", "success")
+    return redirect(url_for("view_task", task_id=parent.get("id")))
+
+
+@app.post("/mentor/admin-tasks/<task_id>/upload-to-admin")
+def mentor_upload_to_admin(task_id):
+    """Allow a mentor to choose local files and submit them to Admin as one ZIP."""
+    if not role_required("mentor"):
+        flash("Only mentors can upload files to Admin.", "danger")
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    user = current_user()
+    parent = next((t for t in tasks if t.get("id") == task_id and t.get("created_by_role", "admin") == "admin"), None)
+    if not parent:
+        flash("Admin task not found.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+    assigned = set(parent.get("assigned_intern_ids") or [parent.get("intern_id")])
+    if not mentor_intern_ids(user, interns).intersection(assigned):
+        flash("You cannot upload files for this admin task.", "danger")
+        return redirect(url_for("mentor_dashboard"))
+
+    uploads = [item for item in request.files.getlist("admin_file") if item and item.filename]
+    if not uploads:
+        flash("Choose at least one file to upload to Admin.", "warning")
+        return redirect(url_for("view_task", task_id=parent.get("id")))
+
+    temp_files = []
+    try:
+        for storage in uploads:
+            uploaded = save_upload(storage, PROJECT_UPLOAD_DIR, f"admin_collect_{parent.get('id', 'task')}")
+            if uploaded:
+                temp_files.append(uploaded)
+        if not temp_files:
+            flash("No valid files were selected.", "warning")
+            return redirect(url_for("view_task", task_id=parent.get("id")))
+
+        stored_name = f"final_{parent.get('id', 'project')}_{uuid4().hex[:10]}.zip"
+        zip_path = PROJECT_UPLOAD_DIR / stored_name
+        used_names = set()
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for uploaded in temp_files:
+                source = PROJECT_UPLOAD_DIR / uploaded["stored_name"]
+                if not source.exists():
+                    continue
+                filename = secure_filename(uploaded.get("filename", source.name)) or source.name
+                arcname = filename
+                base = arcname
+                counter = 2
+                while arcname in used_names:
+                    stem, dot, suffix = base.rpartition(".")
+                    arcname = f"{stem}_{counter}{dot}{suffix}" if dot else f"{base}_{counter}"
+                    counter += 1
+                used_names.add(arcname)
+                archive.write(source, arcname=arcname)
+
+        old_final = project_path(parent.get("final_project_file"))
+        if old_final and old_final != zip_path:
+            old_final.unlink(missing_ok=True)
+        parent["final_project_file"] = {
+            "filename": f"{parent.get('id', 'task')}_final_submission.zip",
+            "stored_name": stored_name,
+        }
+        parent["final_project_submitted_by"] = user.get("username", "Mentor")
+        parent["final_project_submitted_at"] = notification_timestamp()
+        parent["final_project_source"] = "Mentor selected files"
         save_json(TASKS_FILE, tasks)
-        # Do not expose the intern upload to admin; only the assigned mentor can access it.
-        notify_users(mentor_user_ids_for_task(task, interns), task, user.get("username", "Intern"), "Uploaded a project ZIP")
-        flash("Project ZIP uploaded successfully. It is now available to your mentor.", "success")
-    return redirect(url_for("intern_dashboard"))
+        notify_users(admin_user_ids(), parent, user.get("username", "Mentor"), "Uploaded selected files to Admin as a single ZIP")
+        flash(f"{len(temp_files)} file(s) uploaded to Admin as one ZIP successfully.", "success")
+    finally:
+        # The files are packaged into the final ZIP, so the temporary copies are no longer needed.
+        for uploaded in temp_files:
+            (PROJECT_UPLOAD_DIR / uploaded["stored_name"]).unlink(missing_ok=True)
+
+    return redirect(url_for("view_task", task_id=parent.get("id")))
 
 
+@app.post("/intern/tasks/<task_id>/upload")
+def upload_project(task_id):
+    # Interns now submit files only through the mentor-file workflow.
+    # Keep this legacy endpoint blocked so an intern cannot upload a project
+    # directly into the admin/final-submission channel.
+    if not role_required("intern"):
+        flash("Only interns can upload files to a mentor.", "danger")
+        return redirect(url_for("home"))
+    flash("Intern files must be uploaded to your mentor using the Upload to mentor button.", "warning")
+    return redirect(url_for("view_task", task_id=task_id))
 @app.post("/mentor/tasks/<task_id>/final-upload")
 def upload_final_project(task_id):
     if not role_required("mentor"):
@@ -1729,8 +2105,7 @@ def upload_final_project(task_id):
     if task is None or task.get("created_by_role") != "mentor":
         flash("Mentor subtask not found.", "danger")
         return redirect(url_for("mentor_dashboard"))
-    assigned = set(task.get("assigned_intern_ids") or [task.get("intern_id")])
-    if not mentor_intern_ids(user, interns).intersection(assigned):
+    if not mentor_can_access_task(user, task, interns):
         flash("You cannot submit a final project for this task.", "danger")
         return redirect(url_for("mentor_dashboard"))
     parent = parent_admin_task(task, tasks)
@@ -1772,7 +2147,7 @@ def download_project(task_id):
         allowed = True
         parent = parent_admin_task(task, tasks)
         file_record = (parent or task).get("final_project_file")
-    elif role == "mentor" and mentor_intern_ids(user, interns).intersection(assigned):
+    elif role == "mentor" and mentor_can_access_task(user, task, interns):
         allowed = True
         file_record = task.get("intern_project_file") or task.get("project_file")
         if not file_record and task.get("created_by_role") == "admin":
@@ -1788,7 +2163,8 @@ def download_project(task_id):
     if not path:
         flash("No project file is available for your role yet.", "warning")
         return redirect(request.referrer or url_for("home"))
-    return send_file(path, as_attachment=True, download_name=file_record.get("filename", path.name))
+    display_name = file_record.get("filename", path.name) if file_record else path.name
+    return send_file(path, as_attachment=True, download_name=display_name)
 
 
 if __name__ == "__main__":

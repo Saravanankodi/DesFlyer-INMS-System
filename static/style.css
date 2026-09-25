@@ -53,7 +53,7 @@
 .users-table-scroll thead th{position:sticky;top:0;z-index:3;background:#fafbfc;box-shadow:0 1px 0 var(--line)}
 .users-table-card{overflow:hidden}
 .latest-task{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:3px}
-.latest-task small{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.latest-task small{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;font-weight:400}
 .latest-task strong{font-size:.82rem;line-height:1.35}
 .wide-form-card{max-width:1100px}
 .task-id-field{background:#f7f9fa;color:#6f7d88;font-family:monospace}
@@ -98,7 +98,7 @@
 }
 
 /* INMS refinements */
-.table thead th{color:#000;font-weight:800}
+.table thead th{color:#19212a;font-weight:800}
 .department-badge{background:#e1f6ed;color:#147953;font-weight:700;border-radius:20px;padding:5px 9px;white-space:nowrap}
 .nav-logo{height:34px;width:auto;max-width:150px;object-fit:contain;background:white;border-radius:4px;padding:3px 7px;margin-right:10px}
 .brand-name{font-weight:800;color:#fff}
@@ -109,7 +109,7 @@
 .fixed-form-page .compact-form-card .card-body{padding-top:18px!important;padding-bottom:18px!important}
 @media(max-width:991.98px){.fixed-form-page{height:auto;overflow:visible}.fixed-form-page .compact-form-card{overflow:visible}.nav-logo{height:30px}}
 /* INMS branding and requested visual refinements */
-.table thead th{color:#000!important}
+.table thead th{color:#19212a!important}
 .department-badge{display:inline-block;background:#e1f6ed;color:#147953;font-size:.74rem;font-weight:700;border-radius:20px;padding:5px 9px;white-space:nowrap}
 .brand-logo{height:34px;width:auto;object-fit:contain;background:#fff;border-radius:5px;padding:3px 6px}
 .brand-project-name{color:#fff!important;font-size:.82rem;margin-left:6px;font-weight:700;letter-spacing:.7px}
@@ -721,17 +721,19 @@ body {
 }
 
 .login-page {
-  padding: 28px 16px;
+  padding: 0;
   background: radial-gradient(circle at top, #e5f4ff 0, #f7fbff 48%, #fff 100%);
 }
 
 .login-shell {
-  width: min(620px, 100%);
+  width: min(540px, 94vw);
+  min-height: 100vh;
 }
 
 .login-card {
+  min-height: 100vh;
   border: 1px solid #d8ebfa;
-  border-radius: 24px;
+  border-radius: 0;
   box-shadow: 0 24px 70px rgba(6, 59, 99, .14);
 }
 
@@ -1059,6 +1061,12 @@ main.container-fluid{flex:1 0 auto;width:100%;}
 }
 
 
+/* Subtle horizontal spacing between form/grid boxes across the project.
+   Keep the overall page width and vertical spacing unchanged. */
+body .row.g-3 {
+  --bs-gutter-x: 1.1rem;
+}
+
 /* Final alignment and footer fixes */
 html, body {
   width: 100%;
@@ -1352,7 +1360,7 @@ body.login-page .login-brand img {
 
 /* Final requested UI refinements */
 /* Login: keep the card at a stable size without reducing existing font sizes. */
-body.login-page .login-shell { width: min(620px, 94vw); }
+body.login-page .login-shell { width: min(540px, 94vw); }
 body.login-page .login-card { width: 100%; height: 650px; max-height: calc(100vh - 32px); }
 body.login-page .login-card .card-body { height: 100%; display: flex; flex-direction: column; justify-content: center; }
 body.login-page .login-title { text-align: center; }
@@ -1416,7 +1424,7 @@ body.login-page .login-role-group { width: 100%; }
 }
 
 .manage-interns-action {
-  color: #000000 !important;
+  color: #19212a !important;
   font-size: 2.3rem !important;
   font-weight: 700 !important;
 }
@@ -1523,12 +1531,12 @@ body.login-page .login-role-group { width: 100%; }
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  color: #000000 !important;
+  color: #19212a !important;
   font-size: 1rem !important;
 }
 
 .site-footer span {
-  color: #000000 !important;
+  color: #19212a !important;
   font-size: inherit !important;
 }
 
@@ -1580,18 +1588,18 @@ body.login-page .login-role-group { width: 100%; }
 
 .delete-confirm-dialog h2 {
   margin: 0 0 10px;
-  color: #000;
+  color: #19212a;
   font-size: 1.45rem;
 }
 
 .delete-confirm-dialog p {
   margin: 0 0 8px;
-  color: #000;
+  color: #19212a;
   font-size: .98rem;
 }
 
 .delete-confirm-message {
-  color: #555 !important;
+  color: #596876 !important;
   font-size: .84rem !important;
 }
 
@@ -1659,6 +1667,10 @@ body.login-page .login-role-group { width: 100%; }
 
 }
 
+.intern-card .latest-task small {
+  font-weight: 400 !important;
+}
+
 .intern-card .latest-task strong {
   font-weight: 600 !important;
 }
@@ -1676,7 +1688,7 @@ body.login-page .login-role-group { width: 100%; }
   letter-spacing: -.7px !important;
   line-height: 1.2;
   text-transform: uppercase;
-  color: #000000 !important;
+  color: #19212a !important;
 }
 
 /* Mentor project ZIP workflow. */
@@ -1691,7 +1703,7 @@ body.login-page .login-role-group { width: 100%; }
 
 /* Match dashboard statistic labels to the main DASHBOARD heading. */
 .metric-card span {
-  color: #000000 !important;
+  color: #19212a !important;
   font-family: 'Space Grotesk', sans-serif !important;
   font-size: 1rem !important;
   font-weight: 700 !important;
@@ -1819,6 +1831,85 @@ body.login-page .login-help { order: 99; }
 }
 
 
+/* Mentor department multi-select dropdown */
+.mentor-department-dropdown {
+  position: relative;
+}
+.mentor-department-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.mentor-department-toggle:hover {
+  border-color: #cbd5df;
+}
+.mentor-department-toggle:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 .2rem #f47b5230;
+  outline: none;
+}
+.mentor-department-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-weight: 400;
+}
+.mentor-department-summary:empty {
+  color: var(--muted);
+}
+.mentor-department-toggle i {
+  flex: 0 0 auto;
+  transition: transform .15s ease;
+}
+.mentor-department-dropdown.open .mentor-department-toggle i {
+  transform: rotate(180deg);
+}
+.mentor-department-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(23, 33, 43, .14);
+}
+.mentor-department-menu[hidden] {
+  display: none;
+}
+.mentor-department-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  margin: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.mentor-department-option:hover {
+  background: #f5f9ff;
+}
+.mentor-department-option .form-check-input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+
 /* Latest login correction: Welcome Back is the main heading and Login labels the role section. */
 body.login-page .login-title {
   font-size: 2.45rem;
@@ -1865,7 +1956,7 @@ body .user-info,
 body .mobile-side-nav,
 body .mobile-side-nav a,
 body footer {
-  color: #000000 !important;
+  color: #19212a !important;
 }
 
 body {
@@ -1888,7 +1979,7 @@ body .text-muted,
 body .small,
 body small {
   font-size: 1.05rem !important;
-  color: #000000 !important;
+  color: #19212a !important;
 }
 
 body h1 { font-size: 2.5rem; }
@@ -1900,7 +1991,7 @@ body .form-label,
 body .eyebrow {
   font-size: 1.05rem !important;
   font-weight: 700 !important;
-  color: #000000 !important;
+  color: #19212a !important;
 }
 
 body .table tbody td,
@@ -1911,7 +2002,7 @@ body .card input,
 body .card select,
 body .card textarea {
   font-weight: 400 !important;
-  color: #000000 !important;
+  color: #19212a !important;
 }
 
 .app-nav,
@@ -1924,19 +2015,19 @@ body .card textarea {
 .app-nav .nav-link:focus,
 .mobile-side-links a:hover,
 .mobile-side-links a:active {
-  color: #000000 !important;
+  color: #19212a !important;
   background: #f2f2f2;
 }
 
 .btn-primary,
 .btn-accent,
 .mobile-side-links .mobile-assign {
-  color: #000000 !important;
+  color: #19212a !important;
 }
 
 .user-info {
   background: #ffffff !important;
-  border-color: #000000 !important;
+  border-color: #19212a !important;
 }
 
 /* Consolidated mentor dashboard/task refinements. */
@@ -2074,13 +2165,19 @@ body .table tbody td.intern-count-column {
 }
 
 
-/* Progress reports: compact icon-only PDF/View actions. */
+/* Progress reports: compact centered icon-only PDF/View/Delete actions. */
 .report-actions {
-  display: inline-flex !important;
+  width: 100% !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
   white-space: nowrap !important;
+}
+.report-actions > a,
+.report-actions > form {
+  display: inline-flex !important;
+  margin: 0 !important;
 }
 .report-actions .icon-action {
   width: 42px !important;
@@ -2094,4 +2191,1726 @@ body .table tbody td.intern-count-column {
 .report-actions .icon-action i {
   font-size: 21px !important;
   line-height: 1 !important;
+}
+
+
+/* Final navigation theme requested by user */
+.app-nav,
+.mobile-side-header {
+  background: #0496FF !important;
+  border-bottom: 0 !important;
+}
+.app-nav .nav-link,
+.app-nav .navbar-brand,
+.app-nav .brand-name,
+.app-nav .navbar-brand span,
+.app-nav .mobile-menu-btn,
+.mobile-side-header,
+.mobile-side-header * {
+  color: #ffffff !important;
+}
+.app-nav .nav-link:hover,
+.app-nav .nav-link:focus,
+.app-nav .nav-link:active {
+  color: #ffffff !important;
+  background: rgba(255,255,255,.10) !important;
+}
+.app-nav .nav-logo {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.app-nav .user-info {
+  color: #19212a !important;
+  background: #ffffff !important;
+}
+.app-nav .user-info span,
+.app-nav .user-info small {
+  color: #19212a !important;
+}
+.app-nav .notification-button {
+  color: #19212a !important;
+}
+.mobile-side-nav {
+  background: #0496FF !important;
+}
+.mobile-side-nav a,
+.mobile-side-nav .mobile-side-header,
+.mobile-side-nav .mobile-side-header * {
+  color: #ffffff !important;
+}
+
+/* Global eyebrow color refinement */
+body .eyebrow {
+  color: #0496FF !important;
+}
+
+/* Global eyebrow/section-label accent: match the Assign task button blue. */
+.eyebrow {
+  color: #0496FF !important;
+}
+
+/* Final dashboard card typography: use regular weight for all metric card text. */
+.metric-card strong,
+.metric-card span {
+  font-weight: 400 !important;
+}
+
+/* INMS project name in the navbar uses the Assign task blue. */
+.app-nav .brand-name {
+  color: #0496FF !important;
+}
+
+/* Allocation tables: compact, wrapped layout with no horizontal scrolling. */
+.allocation-table-wrap {
+  width: 100%;
+  overflow-x: hidden !important;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.allocation-table-wrap .allocation-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  margin-bottom: 0;
+}
+.allocation-table-wrap .allocation-table th,
+.allocation-table-wrap .allocation-table td {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: middle;
+}
+.allocation-table-wrap .allocation-table th:nth-child(1),
+.allocation-table-wrap .allocation-table td:nth-child(1) { width: 9%; }
+.allocation-table-wrap .allocation-table th:nth-child(2),
+.allocation-table-wrap .allocation-table td:nth-child(2) { width: 12%; }
+.allocation-table-wrap .allocation-table th:nth-child(3),
+.allocation-table-wrap .allocation-table td:nth-child(3) { width: 11%; }
+.allocation-table-wrap .allocation-table th:nth-child(4),
+.allocation-table-wrap .allocation-table td:nth-child(4) { width: 13%; }
+.allocation-table-wrap .allocation-table th:nth-child(5),
+.allocation-table-wrap .allocation-table td:nth-child(5) { width: 17%; }
+.allocation-table-wrap .allocation-table th:nth-child(6),
+.allocation-table-wrap .allocation-table td:nth-child(6) { width: 11%; }
+.allocation-table-wrap .allocation-table th:nth-child(7),
+.allocation-table-wrap .allocation-table td:nth-child(7) { width: 8%; }
+.allocation-table-wrap .allocation-table th:nth-child(8),
+.allocation-table-wrap .allocation-table td:nth-child(8) { width: 10%; }
+.allocation-table-wrap .allocation-table th:nth-child(9),
+.allocation-table-wrap .allocation-table td:nth-child(9) { width: 9%; }
+.allocation-table-wrap .allocation-table th:nth-child(10),
+.allocation-table-wrap .allocation-table td:nth-child(10) { width: 10%; }
+.allocation-table-wrap .allocation-table th:last-child,
+.allocation-table-wrap .allocation-table td:last-child { white-space: nowrap !important; }
+@media (max-width: 991.98px) {
+  .allocation-table-wrap { overflow-x: hidden !important; }
+  .allocation-table-wrap .allocation-table { font-size: 0.9rem; }
+  .allocation-table-wrap .allocation-table th,
+  .allocation-table-wrap .allocation-table td { padding: 0.55rem 0.45rem; }
+}
+
+/* Final allocation-table refinement: single-line headers, clean column widths, and spaced actions. */
+.allocation-table-wrap .allocation-table thead th {
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  font-size: .68rem !important;
+  padding: 13px 10px !important;
+  line-height: 1.2;
+}
+.allocation-table-wrap .allocation-table tbody td {
+  padding: 13px 10px !important;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Admin allocation: 9 columns, no Project ZIP column. */
+.allocation-table-wrap .allocation-table thead th:nth-child(1),
+.allocation-table-wrap .allocation-table tbody td:nth-child(1) { width: 8%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(2),
+.allocation-table-wrap .allocation-table tbody td:nth-child(2) { width: 11%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(3),
+.allocation-table-wrap .allocation-table tbody td:nth-child(3) { width: 13%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(4),
+.allocation-table-wrap .allocation-table tbody td:nth-child(4) { width: 12%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(5),
+.allocation-table-wrap .allocation-table tbody td:nth-child(5) { width: 17%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(6),
+.allocation-table-wrap .allocation-table tbody td:nth-child(6) { width: 10%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(7),
+.allocation-table-wrap .allocation-table tbody td:nth-child(7) { width: 7%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(8),
+.allocation-table-wrap .allocation-table tbody td:nth-child(8) { width: 9%; }
+.allocation-table-wrap .allocation-table thead th:nth-child(9),
+.allocation-table-wrap .allocation-table tbody td:nth-child(9) { width: 8%; }
+
+/* Mentor allocation: 10 columns, with Admin Task and no separate Project ZIP column. */
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(1),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(1) { width: 7%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(2),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(2) { width: 12%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(3),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(3) { width: 10%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(4),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(4) { width: 11%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(5),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(5) { width: 12%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(6),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(6) { width: 15%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(7),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(7) { width: 9%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(8),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(8) { width: 7%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(9),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(9) { width: 9%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(10),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(10) { width: 8%; }
+
+/* Keep task names readable without making the whole table wider. */
+.allocation-table-wrap .allocation-table tbody td:nth-child(5),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(2),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(6) {
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Give Eye/Edit controls breathing room. */
+.allocation-table-wrap .allocation-table td.task-actions {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  word-break: normal !important;
+  text-align: center !important;
+}
+.allocation-table-wrap .allocation-table td.task-actions .btn {
+  width: 40px;
+  height: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 3px;
+  vertical-align: middle;
+}
+
+/* Allocation tables: restore the normal readable size while keeping the compact column count. */
+.allocation-table-wrap .allocation-table thead th {
+  font-size: .7rem !important;
+  padding: 15px 12px !important;
+}
+.allocation-table-wrap .allocation-table tbody td {
+  padding: 15px 12px !important;
+  font-size: .88rem;
+}
+
+/* Admin allocation: 8 columns after removing Intern. */
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(1),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(1) { width: 9%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(2),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(2) { width: 13%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(3),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(3) { width: 16%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(4),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(4) { width: 23%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(5),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(5) { width: 12%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(6),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(6) { width: 8%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(7),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(7) { width: 10%; }
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(8),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(8) { width: 9%; }
+
+/* Mentor allocation: 9 columns after removing Intern. */
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(1),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(1) { width: 8%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(2),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(2) { width: 15%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(3),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(3) { width: 13%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(4),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(4) { width: 17%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(5),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(5) { width: 19%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(6),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(6) { width: 11%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(7),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(7) { width: 7%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(8),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(8) { width: 10%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(9),
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(9) { width: 10%; }
+
+/* Match the clean Admin action controls: clearly separated Eye and Edit buttons. */
+.allocation-table-wrap .allocation-table td.task-actions {
+  display: table-cell !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  text-align: center !important;
+}
+.allocation-table-wrap .allocation-table td.task-actions .btn {
+  width: 40px !important;
+  height: 40px !important;
+  margin: 0 5px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+}
+
+/* Allocation table headers: match the reference table header size only. */
+.allocation-table-wrap .allocation-table thead th {
+  font-size: .88rem !important;
+}
+
+/* Tasks page: keep the tables visually consistent with the dashboard and aligned across all columns. */
+.tasks-page .allocation-table-wrap { overflow-x: hidden !important; }
+.tasks-page .allocation-table { width: 100% !important; table-layout: fixed !important; }
+.tasks-page .allocation-table thead th { white-space: nowrap !important; font-size: .88rem !important; }
+.tasks-page .allocation-table tbody td { vertical-align: middle !important; }
+.tasks-page .allocation-table tbody td:nth-child(5) strong,
+.tasks-page .allocation-table.mentor-allocation-table tbody td:nth-child(5) strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tasks-page .allocation-table td.task-actions { white-space: nowrap !important; text-align: center !important; }
+.tasks-page .allocation-table td.task-actions .btn {
+  width: 40px !important;
+  height: 40px !important;
+  margin: 0 5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+/* Admin/non-mentor Tasks: 9 columns. */
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 8%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 13%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 10%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 20%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 10%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 7%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 9%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 12%; }
+/* Mentor subtasks: 9 columns, with Intern removed. */
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 8%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 14%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 12%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 14%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 18%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 7%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 8%; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 9%; }
+
+/* Mentor admin-task submission action: keep the eye/edit buttons separated while
+   giving the mentor a clear Upload to Admin action. */
+.upload-admin-btn {
+  gap: 7px;
+  white-space: nowrap;
+  min-width: 132px;
+}
+.upload-admin-btn i {
+  font-size: 16px !important;
+}
+@media (max-width: 1200px) {
+  .upload-admin-btn span { display: none; }
+  .upload-admin-btn { min-width: 46px; width: 46px !important; }
+}
+
+/* Intern -> Mentor -> Admin file collection panel */
+.intern-files-panel .intern-files-table-scroll{overflow-x:auto;}
+.intern-files-panel .intern-files-table-scroll table{min-width:760px;}
+.intern-files-panel .file-name-cell{max-width:520px;overflow-wrap:anywhere;word-break:break-word;}
+.intern-files-panel .intern-file-actions{justify-content:center!important;gap:10px!important;}
+.intern-files-panel .intern-file-actions > a,.intern-files-panel .intern-file-actions > form{margin:0!important;}
+@media(max-width:767.98px){
+  .intern-files-panel .intern-files-table-scroll table{min-width:680px;}
+}
+
+/* Mentor chooses which collected intern files to send to Admin. */
+.intern-files-panel .file-select-column { width: 82px; }
+.intern-files-panel .mentor-file-checkbox { width: 18px; height: 18px; cursor: pointer; }
+.intern-files-panel .mentor-file-submit-bar { border-top: 1px solid #e5e9ed; }
+.intern-files-panel .mentor-file-submit-bar .btn { white-space: nowrap; }
+@media (max-width: 767.98px) {
+  .intern-files-panel .mentor-file-submit-bar { align-items: stretch !important; flex-direction: column; }
+  .intern-files-panel .mentor-file-submit-bar .d-flex { width: 100%; }
+  .intern-files-panel .mentor-file-submit-bar .btn { flex: 1; }
+}
+
+/* Final table title sizing: match the title/value size used in the Interns dashboard table across every table. */
+body .table tbody td strong {
+  font-size: 1.05rem !important;
+  line-height: 1.35 !important;
+}
+
+
+/* Final table readability refinement: task titles match the dashboard size everywhere. */
+.table tbody td strong,
+.table tbody td .task-title-normal {
+  font-size: 1.2rem !important;
+  line-height: 1.25;
+}
+
+/* Dates must stay on one line; use the available table space instead of wrapping at hyphens. */
+.table tbody td.deadline-cell {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  min-width: 105px;
+}
+
+/* Keep allocation deadline columns wide enough for the complete date. */
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(6),
+.allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(6) {
+  width: 11% !important;
+}
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(7),
+.allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(7) {
+  width: 10% !important;
+}
+
+
+/* FINAL TABLE HEADER + DATE ALIGNMENT FIX
+   Match the larger dashboard table header size across every table.
+   Keep all deadline/date values on one line. */
+body .table thead th,
+body .allocation-table-wrap .allocation-table thead th {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  line-height: 1.2 !important;
+}
+
+body .table tbody td.deadline-cell,
+body .allocation-table-wrap .allocation-table tbody td.deadline-cell,
+body .allocation-table-wrap .allocation-table thead th:nth-child(6) {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+
+/* Give deadline columns enough room for dates such as 22-09-26. */
+body .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+body .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(6) {
+  min-width: 105px !important;
+}
+
+body .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(6),
+body .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(6) {
+  min-width: 105px !important;
+}
+
+
+/* Login page - final compact reference layout */
+body.login-page {
+  min-height: 100vh;
+  padding: 24px 16px 0;
+  background: #f5f7fb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.login-page .login-shell {
+  width: min(580px, calc(100vw - 32px));
+  margin: 12px auto 0;
+}
+
+body.login-page .login-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(31,41,55,.12);
+  overflow: hidden;
+}
+
+body.login-page .login-card .card-body {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  display: block;
+  padding: 48px 50px 50px !important;
+}
+
+body.login-page .login-brand {
+  display: none;
+}
+
+body.login-page .login-system-name {
+  color: var(--accent);
+  text-align: center;
+  font-size: 1.08rem;
+  font-weight: 800;
+  margin: 0 0 18px;
+  letter-spacing: 0;
+}
+
+body.login-page .login-title {
+  color: #17212b;
+  font-size: 2.25rem;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin: 0 0 8px;
+  text-align: left;
+  text-transform: none;
+}
+
+body.login-page .login-subtitle {
+  color: #596876;
+  font-size: 1rem;
+  margin: 0;
+  text-align: left;
+}
+
+body.login-page .login-form {
+  margin-top: 30px;
+  width: 100%;
+}
+
+body.login-page .login-role-heading {
+  display: block;
+  margin: 0 0 10px;
+  color: #17212b;
+  font-size: .94rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+body.login-page .login-role-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  gap: 0;
+  margin: 0 0 30px !important;
+  border: 1px solid #dce2e6;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+body.login-page .login-role-group label {
+  min-width: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+body.login-page .login-role-group label + label {
+  border-left: 1px solid #edf0f2;
+}
+
+body.login-page .login-role-group input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+body.login-page .login-role-group span {
+  display: flex;
+  min-height: 52px;
+  padding: 10px 8px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 7px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  color: #596876;
+  text-align: center;
+  box-shadow: none;
+  transform: none;
+  transition: background .15s ease, color .15s ease;
+}
+
+body.login-page .login-role-group span .role-icon {
+  display: inline-grid;
+  width: auto;
+  height: auto;
+  margin: 0;
+  place-items: center;
+  border-radius: 0;
+  background: transparent;
+  color: #66788a;
+  font-size: .95rem;
+}
+
+body.login-page .login-role-group span strong {
+  color: inherit;
+  font-size: .95rem;
+  font-weight: 600;
+}
+
+body.login-page .login-role-group span small {
+  display: none;
+}
+
+body.login-page .login-role-group label:hover span,
+body.login-page .login-role-group input:focus-visible + span {
+  border: 0;
+  box-shadow: none;
+  transform: none;
+  background: #f7faff;
+}
+
+body.login-page .login-role-group input:checked + span {
+  border: 0;
+  background: #f1faff;
+  color: var(--accent);
+  box-shadow: none;
+}
+
+body.login-page .login-role-group input:checked + span .role-icon {
+  background: transparent;
+  color: var(--accent);
+}
+
+body.login-page .login-field {
+  margin-bottom: 28px;
+}
+
+body.login-page .login-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #17212b;
+  font-size: .94rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+body.login-page .login-input {
+  height: 60px;
+  padding: 15px 16px !important;
+  border: 1px solid #dce2e6;
+  border-radius: 9px;
+  color: #17212b;
+  font-size: 1rem !important;
+  box-shadow: none;
+}
+
+body.login-page .login-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 .18rem rgba(4,150,255,.12);
+}
+
+body.login-page .password-wrap .form-control {
+  padding-right: 48px !important;
+}
+
+body.login-page .password-toggle {
+  right: 8px;
+  color: #718092;
+}
+
+body.login-page .login-button {
+  height: 57px;
+  margin-top: 0;
+  padding: 13px 16px;
+  border-radius: 9px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(4,150,255,.18);
+}
+
+body.login-page .login-help {
+  margin-top: 26px !important;
+  border: 0;
+  border-radius: 12px;
+  background: #f7f8fc;
+  color: #596876;
+  padding: 14px 16px;
+  font-size: .9rem;
+  line-height: 1.7;
+}
+
+body.login-page .login-page-footer {
+  width: 100%;
+  margin-top: auto;
+}
+
+@media (max-width: 575.98px) {
+  body.login-page {
+    padding: 12px 10px 0;
+  }
+  body.login-page .login-shell {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0;
+  }
+  body.login-page .login-card .card-body {
+    padding: 34px 24px 36px !important;
+  }
+  body.login-page .login-title {
+    font-size: 2rem;
+  }
+  body.login-page .login-role-group span {
+    min-height: 50px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  body.login-page .login-role-group span strong {
+    font-size: .88rem;
+  }
+  body.login-page .login-role-group span .role-icon {
+    font-size: .85rem;
+  }
+}
+
+/* Final login viewport fix: keep the whole login page fixed and prevent the footer from covering the card. */
+html:has(body.login-page),
+html:has(body.login-page) body {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden !important;
+}
+
+body.login-page {
+  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fb;
+  overflow: hidden !important;
+}
+
+body.login-page .login-shell {
+  width: min(580px, calc(100vw - 32px));
+  height: auto;
+  min-height: 0;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+body.login-page .login-card {
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(31,41,55,.12);
+}
+
+body.login-page .login-card .card-body {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  display: block;
+  padding: 30px 50px 32px !important;
+}
+
+body.login-page .login-brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 8px;
+}
+
+body.login-page .login-brand img {
+  display: block;
+  width: auto;
+  height: 48px;
+  max-width: 190px;
+  object-fit: contain;
+}
+
+body.login-page .login-system-name {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+body.login-page .login-title {
+  font-size: 2.15rem;
+  line-height: 1.05;
+  margin: 0 0 7px;
+}
+
+body.login-page .login-subtitle {
+  font-size: .98rem;
+  line-height: 1.35;
+}
+
+body.login-page .login-form {
+  margin-top: 21px;
+}
+
+body.login-page .login-role-heading {
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+body.login-page .login-role-group {
+  margin-bottom: 21px !important;
+}
+
+body.login-page .login-role-group span {
+  min-height: 50px;
+}
+
+body.login-page .login-field {
+  margin-bottom: 18px;
+}
+
+body.login-page .login-label {
+  margin-bottom: 7px;
+}
+
+body.login-page .login-input {
+  height: 56px;
+}
+
+body.login-page .login-button {
+  height: 54px;
+}
+
+body.login-page .login-help {
+  margin-top: 16px !important;
+  padding: 11px 14px;
+  font-size: .86rem;
+  line-height: 1.45;
+}
+
+/* Footer belongs to the page, not the login card, and reserves its own space. */
+body.login-page .login-page-footer {
+  position: fixed !important;
+  right: 24px;
+  bottom: 16px;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 !important;
+  box-sizing: border-box;
+  background: transparent;
+  color: #17212b;
+  font-size: .88rem;
+  z-index: 1;
+}
+
+@media (max-height: 760px) and (min-width: 576px) {
+  body.login-page .login-card .card-body {
+    padding-top: 22px !important;
+    padding-bottom: 22px !important;
+  }
+  body.login-page .login-brand img { height: 40px; }
+  body.login-page .login-system-name { margin-bottom: 8px; }
+  body.login-page .login-title { font-size: 1.95rem; }
+  body.login-page .login-form { margin-top: 16px; }
+  body.login-page .login-role-group { margin-bottom: 16px !important; }
+  body.login-page .login-field { margin-bottom: 14px; }
+  body.login-page .login-input { height: 50px; }
+  body.login-page .login-button { height: 50px; }
+  body.login-page .login-help { margin-top: 12px !important; }
+}
+
+@media (max-width: 575.98px) {
+  body.login-page .login-shell {
+    width: calc(100vw - 20px);
+  }
+  body.login-page .login-card {
+    max-height: none;
+  }
+  body.login-page .login-card .card-body {
+    padding: 20px 24px 22px !important;
+  }
+  body.login-page .login-brand img { height: 42px; }
+  body.login-page .login-title { font-size: 1.9rem; }
+  body.login-page .login-role-group span { min-height: 48px; }
+  body.login-page .login-role-group span strong { font-size: .88rem; }
+  body.login-page .login-input { height: 52px; }
+  body.login-page .login-button { height: 50px; }
+  body.login-page .login-page-footer {
+    right: 12px;
+    bottom: 10px;
+    font-size: .78rem;
+  }
+}
+
+
+/* Final login-page spacing: use the available viewport height without a footer overlay. */
+html:has(body.login-page),
+html:has(body.login-page) body {
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  overflow: hidden !important;
+}
+
+body.login-page {
+  min-height: 100svh;
+  height: 100svh;
+  box-sizing: border-box;
+  padding: 48px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden !important;
+}
+
+body.login-page .login-shell {
+  width: min(780px, calc(100vw - 32px));
+  height: min(760px, calc(100svh - 96px));
+  max-height: calc(100svh - 96px);
+  margin: 0 auto;
+}
+
+body.login-page .login-card {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  overflow: hidden;
+}
+
+body.login-page .login-card .card-body {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: 34px 60px !important;
+}
+
+/* Keep Login as centered while the role choices remain a single row. */
+body.login-page .login-role-heading {
+  width: 100%;
+  text-align: center !important;
+}
+
+/* The login page no longer uses a footer. */
+body.login-page .login-page-footer {
+  display: none !important;
+}
+
+@media (max-height: 760px) and (min-width: 576px) {
+  body.login-page {
+    padding: 20px 12px;
+  }
+  body.login-page .login-shell {
+    height: calc(100svh - 40px);
+    max-height: calc(100svh - 40px);
+  }
+  body.login-page .login-card .card-body {
+    padding: 24px 48px !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  body.login-page {
+    min-height: 100svh;
+    height: 100svh;
+    padding: 12px 10px;
+  }
+  body.login-page .login-shell {
+    width: 100%;
+    height: calc(100svh - 24px);
+    max-height: calc(100svh - 24px);
+  }
+  body.login-page .login-card .card-body {
+    padding: 24px 22px !important;
+    overflow-y: auto;
+  }
+}
+
+/* Login page - requested width and centered welcome text */
+body.login-page .login-shell {
+  width: min(550px, calc(100vw - 32px));
+}
+
+body.login-page .login-title,
+body.login-page .login-subtitle {
+  text-align: center;
+}
+
+/* Admin dashboard Task Pipeline: soften table headings and slightly reduce row text. */
+.admin-task-pipeline thead th {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+.admin-task-pipeline tbody td,
+.admin-task-pipeline tbody td strong,
+.admin-task-pipeline tbody td .status,
+.admin-task-pipeline tbody td .btn {
+  font-size: 0.93rem !important;
+}
+
+
+/* Final typography correction - match the supplied reference typography only.
+   Keep layout, sizes, spacing, icons, buttons and component colors unchanged. */
+body {
+  color: #19212a;
+  font-weight: 400;
+}
+
+/* Main text / descriptions: lighter than the heavy dashboard typography. */
+body p,
+body td,
+body .form-control,
+body .form-select,
+body .form-text,
+body .text-muted,
+body .small,
+body small {
+  color: #596876;
+  font-weight: 400;
+}
+
+/* Page titles and section titles: dark, but not extra-heavy. */
+body h1,
+body h2,
+body h3,
+body h4,
+body h5,
+body h6 {
+  color: #19212a;
+  font-weight: 500 !important;
+}
+
+/* Labels and table headings: clear medium emphasis, not black/heavy. */
+body label,
+body .form-label,
+body .table thead th,
+body th {
+  color: #374151;
+  font-weight: 600 !important;
+}
+
+/* Normal table content should stay lighter than the headings. */
+body .table tbody td,
+body .table tbody td span,
+body .table tbody td div,
+body .table tbody td p {
+  color: #596876;
+  font-weight: 400;
+}
+
+/* Keep intentionally emphasized values readable without the previous heavy weight. */
+body .table tbody td strong,
+body .table tbody td b,
+body .table tbody td .fw-bold {
+  color: #19212a;
+  font-weight: 600 !important;
+}
+
+/* User-management style: usernames are emphasized, surrounding details are normal. */
+body .users-table-scroll td:first-child,
+body .users-table-scroll td:first-child strong,
+body .users-table-scroll td:first-child b {
+  color: #19212a !important;
+  font-weight: 600 !important;
+}
+
+/* Do not alter navigation/button/icon colors. */
+body .btn,
+body .nav-link,
+body .navbar-brand,
+body .metric-icon,
+body .status,
+body .priority-high,
+body .priority-medium,
+body .priority-low,
+body .badge,
+body i {
+  /* Existing component colors are intentionally preserved. */
+}
+
+
+/* FINAL USER REQUEST: match dashboard heading typography in its dashboard panels. */
+body .dashboard-panel h2,
+body .dashboard-panel h3,
+body .dashboard-panel h4 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 2.5rem !important;
+  font-weight: 500 !important;
+  letter-spacing: -.7px !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  color: #19212a !important;
+}
+
+/* FINAL USER REQUEST: navbar action text/icons should be white like the nav links. */
+body .app-nav .desktop-nav .btn-accent,
+body .app-nav .desktop-nav .btn-accent i,
+body .app-nav .desktop-nav .btn-outline-light,
+body .app-nav .desktop-nav .btn-outline-light i,
+body .app-nav .notification-button,
+body .app-nav .notification-button i {
+  color: #ffffff !important;
+}
+
+/* FINAL NAVBAR COLOR + LOGOUT STATE FIX */
+body .app-nav {
+  background: #0496FF !important;
+}
+
+/* Keep navbar actions readable on the blue navigation bar. */
+body .app-nav .desktop-nav .btn-accent,
+body .app-nav .desktop-nav .btn-accent i,
+body .app-nav .desktop-nav .btn-outline-light,
+body .app-nav .desktop-nav .btn-outline-light i,
+body .app-nav .notification-button,
+body .app-nav .notification-button i {
+  color: #ffffff !important;
+}
+
+/* Prevent Bootstrap's white hover/focus/active fill on Logout. */
+body .app-nav .desktop-nav .btn-outline-light:hover,
+body .app-nav .desktop-nav .btn-outline-light:focus,
+body .app-nav .desktop-nav .btn-outline-light:focus-visible,
+body .app-nav .desktop-nav .btn-outline-light:active,
+body .app-nav .desktop-nav .btn-outline-light.active,
+body .app-nav .desktop-nav .btn-outline-light.show {
+  color: #ffffff !important;
+  background-color: transparent !important;
+  border-color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Keep the logout icon white in every interaction state. */
+body .app-nav .desktop-nav .btn-outline-light:hover i,
+body .app-nav .desktop-nav .btn-outline-light:focus i,
+body .app-nav .desktop-nav .btn-outline-light:focus-visible i,
+body .app-nav .desktop-nav .btn-outline-light:active i,
+body .app-nav .desktop-nav .btn-outline-light.active i,
+body .app-nav .desktop-nav .btn-outline-light.show i {
+  color: #ffffff !important;
+}
+
+/* Final global table typography and alignment refinement */
+.table thead th {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: .90rem !important;
+  font-weight: 600 !important;
+  color: #19212a !important;
+  letter-spacing: .3px !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+
+.table tbody td {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: .76rem !important;
+  font-weight: 400 !important;
+  color: #334155;
+  letter-spacing: 0 !important;
+  vertical-align: middle !important;
+}
+
+/* Table data must never become bold just because the template uses <strong>/<b>. */
+.table tbody td strong,
+.table tbody td b,
+.table tbody td .fw-bold,
+.table tbody td .fw-semibold {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  color: inherit;
+}
+
+/* Status/priority badges retain their visual emphasis while table data stays regular. */
+.table tbody td .status,
+.table tbody td .priority-high,
+.table tbody td .priority-medium,
+.table tbody td .priority-low,
+.table tbody td .badge,
+.table tbody td .department-badge,
+.table tbody td .user-role {
+  font-size: .70rem !important;
+  font-weight: 500 !important;
+}
+
+/* Keep action heading and action controls centered on every table. */
+.table thead th:last-child,
+.table tbody td:last-child,
+.table .table-actions,
+.table th.text-end,
+.table td.text-end {
+  text-align: center !important;
+}
+
+/* Consistent table cell spacing without changing table-specific column widths. */
+.table thead th,
+.table tbody td {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.table thead th {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.table tbody td {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+/* Keep multi-line table values compact and aligned consistently. */
+.table tbody td .d-block {
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  color: inherit;
+  text-align: left !important;
+}
+
+/* Final requested table typography: 15px titles and 14px inner data, across the entire project. */
+.table thead th {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  color: #19212a !important;
+  letter-spacing: .3px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.table tbody td {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  color: #334155 !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
+  vertical-align: middle !important;
+}
+
+.table tbody td strong,
+.table tbody td b,
+.table tbody td .fw-bold,
+.table tbody td .fw-semibold {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  color: inherit !important;
+}
+
+.table tbody td .d-block {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  color: inherit !important;
+}
+
+.table thead th:last-child,
+.table tbody td:last-child,
+.table .table-actions,
+.table th.text-end,
+.table td.text-end {
+  text-align: center !important;
+}
+
+/* ============================================================
+   FINAL GLOBAL TABLE CLEANUP
+   - Inner table data is regular weight everywhere.
+   - Headers are larger than inner data and left aligned.
+   - Only the final Actions column is centered.
+   - Allocation/task columns use the available width more evenly.
+   ============================================================ */
+
+/* All normal table content: never bold, including values wrapped in <strong>/<b>. */
+body .table tbody td,
+body .table tbody td strong,
+body .table tbody td b,
+body .table tbody td .fw-bold,
+body .table tbody td .fw-semibold,
+body .table tbody td .task-title-normal,
+body .table tbody td span:not(.badge):not(.status):not(.priority-high):not(.priority-medium):not(.priority-low),
+body .table tbody td div,
+body .table tbody td p,
+body .table tbody td small,
+body .table tbody td code {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+/* Keep the actual table headers larger, medium-weight, and left aligned. */
+body .table thead th {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  color: #19212a !important;
+  text-align: left !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+
+/* Only the Actions header and its controls are centered. */
+body .table thead th:last-child,
+body .table tbody td:last-child,
+body .table .table-actions,
+body .table th.text-end,
+body .table td.text-end {
+  text-align: center !important;
+}
+
+/* Do not let template emphasis make inner values bold. */
+body .table tbody td strong,
+body .table tbody td b,
+body .table tbody td .fw-bold,
+body .table tbody td .fw-semibold {
+  font-weight: 400 !important;
+  color: inherit !important;
+}
+
+/* Status/priority/department badges can keep their own compact visual emphasis. */
+body .table tbody td .badge,
+body .table tbody td .status,
+body .table tbody td[class*="priority-"] {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+/* Give every table's final action column enough room for its controls. */
+body .table {
+  width: 100%;
+}
+body .table thead th:last-child,
+body .table tbody td:last-child {
+  min-width: 110px;
+}
+
+/* Task/allocation tables: rebalance the wide middle columns and reserve space
+   for the complete Actions group instead of leaving large unused gaps. */
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 8% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 12% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 12% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 16% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 10% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 8% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 10% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 13% !important; }
+
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 8% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 13% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 10% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 13% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 16% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 8% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 9% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 13% !important; }
+
+/* Keep action buttons evenly spaced inside the centered action column. */
+body .table .table-actions {
+  white-space: nowrap !important;
+}
+body .table .table-actions .btn {
+  vertical-align: middle;
+}
+
+
+/* Final table consistency pass: slightly larger typography and cleaner task-column separation. */
+body .table thead th { font-size: 16px !important; }
+body .table tbody td,
+body .table tbody td strong,
+body .table tbody td b,
+body .table tbody td .fw-bold,
+body .table tbody td .fw-semibold,
+body .table tbody td .d-block { font-size: 15px !important; }
+body .tasks-page .allocation-table th.team-member-column,
+body .tasks-page .allocation-table td.team-member-column { padding-left: 18px !important; padding-right: 18px !important; }
+body .tasks-page .allocation-table th:nth-child(4),
+body .tasks-page .allocation-table td:nth-child(4) { border-left: 1px solid transparent; }
+
+/* Final user-management table refinement: balanced columns and readable typography. */
+/* Table titles/headers increased by 1px across every table. */
+body .table thead th {
+  font-size: 18px !important;
+}
+
+body .table tbody td,
+body .table tbody td strong,
+body .table tbody td b,
+body .table tbody td .fw-bold,
+body .table tbody td .fw-semibold,
+body .table tbody td .d-block {
+  font-size: 16px !important;
+}
+
+/* Keep the user-management table balanced and prevent email addresses from
+   breaking at arbitrary characters. */
+body .users-table-scroll table {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+body .users-table-scroll thead th:nth-child(1),
+body .users-table-scroll tbody td:nth-child(1) { width: 22% !important; }
+body .users-table-scroll thead th:nth-child(2),
+body .users-table-scroll tbody td:nth-child(2) {
+  width: 38% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+body .users-table-scroll thead th:nth-child(3),
+body .users-table-scroll tbody td:nth-child(3) { width: 18% !important; }
+body .users-table-scroll thead th:nth-child(4),
+body .users-table-scroll tbody td:nth-child(4) {
+  width: 22% !important;
+  text-align: center !important;
+}
+
+body .users-table-scroll .user-actions-buttons,
+body .users-table-scroll .user-action-buttons {
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+}
+
+
+/* Match dashboard panel titles to the ORIGINAL Dashboard page-title style.
+   The Dashboard page title itself is intentionally left unchanged. */
+body .dashboard-panel h2,
+body .dashboard-panel h3,
+body .dashboard-panel h4,
+body .section-title h2,
+body .section-title h3 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -.7px !important;
+  line-height: 1.2 !important;
+  color: #19212a !important;
+}
+
+
+/* Exact Dashboard reference for INNER pages only.
+   The dashboard itself is intentionally untouched. */
+body.inner-page .page-heading h1 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 500 !important;
+  letter-spacing: -.7px !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  color: #19212a !important;
+}
+
+body.inner-page .section-title h2,
+body.inner-page .section-title h3,
+body.inner-page .section-title h4,
+body.inner-page .card-body > h2,
+body.inner-page .card-body > h3,
+body.inner-page .card-body > h4 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 500 !important;
+  letter-spacing: -.7px !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  color: #19212a !important;
+}
+
+/* Dashboard-only panel typography remains exactly as it was in the supplied ZIP. */
+body.dashboard-page .dashboard-panel h2,
+body.dashboard-page .dashboard-panel h3,
+body.dashboard-page .dashboard-panel h4,
+body.dashboard-page .section-title h2,
+body.dashboard-page .section-title h3 {
+  /* intentionally inherit the existing Dashboard rules above */
+}
+
+/* Small horizontal spacing increase for form boxes.
+   Keeps the overall page width and height unchanged; only the gap between
+   adjacent fields is increased slightly. */
+.form-card > .card-body > .row {
+  --bs-gutter-x: 35px;
+}
+
+@media (max-width: 767.98px) {
+  .form-card > .card-body > .row {
+    --bs-gutter-x: 35px;
+  }
+}
+
+/* People form actions: keep Cancel and Save changes as one balanced action group. */
+.people-form-page .card-body > .d-flex.justify-content-end.gap-2 {
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.people-form-page .card-body > .d-flex.justify-content-end.gap-2 > .btn-outline-secondary {
+  min-width: 110px !important;
+  min-height: 52px !important;
+  height: 52px !important;
+  padding: 13px 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+/* Final title consistency: use the Intern Dashboard "Welcome" heading as the
+   visual reference for all major page/section titles. Typography only; no
+   layout, card dimensions, or page spacing are changed. */
+body:not(.login-page) h1,
+body:not(.login-page) h2,
+body:not(.login-page) h3,
+body:not(.login-page) h4,
+body:not(.login-page) h5,
+body:not(.login-page) .page-heading h1,
+body:not(.login-page) .section-title h2,
+body:not(.login-page) .section-title h3,
+body:not(.login-page) .dashboard-panel h2,
+body:not(.login-page) .dashboard-panel h3,
+body:not(.login-page) .dashboard-panel h4,
+body:not(.login-page) .card-body > h2,
+body:not(.login-page) .card-body > h3,
+body:not(.login-page) .card-body > h4,
+body:not(.login-page) .report-header h2 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 500 !important;
+  color: #19212a !important;
+  letter-spacing: -.7px !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+}
+
+/* Match the Welcome heading size for the main/section titles without
+   changing the surrounding layout. */
+body:not(.login-page) .page-heading h1,
+body:not(.login-page) .section-title h2,
+body:not(.login-page) .section-title h3,
+body:not(.login-page) .dashboard-panel h2,
+body:not(.login-page) .dashboard-panel h3,
+body:not(.login-page) .dashboard-panel h4,
+body:not(.login-page) .card-body > h2,
+body:not(.login-page) .card-body > h3,
+body:not(.login-page) .card-body > h4,
+body:not(.login-page) .report-header h2 {
+  font-size: 2rem !important;
+}
+
+@media (max-width: 767px) {
+  body:not(.login-page) .page-heading h1,
+  body:not(.login-page) .section-title h2,
+  body:not(.login-page) .section-title h3,
+  body:not(.login-page) .dashboard-panel h2,
+  body:not(.login-page) .dashboard-panel h3,
+  body:not(.login-page) .dashboard-panel h4,
+  body:not(.login-page) .card-body > h2,
+  body:not(.login-page) .card-body > h3,
+  body:not(.login-page) .card-body > h4,
+  body:not(.login-page) .report-header h2 {
+    font-size: 1.65rem !important;
+  }
+}
+
+/* Login page final spacing refinement: keep the password and Login button
+   visually separated while preserving the fixed card/page dimensions. */
+body.login-page .login-field:last-of-type {
+  margin-bottom: 26px !important;
+}
+
+/* Logout dialogs/overlays must sit above the page without changing layout flow. */
+body.login-page .modal,
+body.login-page .modal-backdrop,
+body.login-page [role="dialog"] {
+  position: fixed !important;
+}
+
+/* Mobile login refinement: keep the same desktop login improvements while
+   using the available phone screen space naturally. */
+@media (max-width: 575.98px) {
+  body.login-page {
+    min-height: 100svh;
+    height: auto;
+    padding: 12px 10px;
+    align-items: center;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  body.login-page .login-shell {
+    width: calc(100vw - 20px);
+    height: auto;
+    max-height: none;
+    margin: 0 auto;
+  }
+
+  body.login-page .login-card {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.login-page .login-card .card-body {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 28px 20px 26px !important;
+    justify-content: flex-start;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  body.login-page .login-brand img {
+    height: 42px;
+    max-height: 42px;
+    width: auto;
+    max-width: 72%;
+  }
+
+  body.login-page .login-system-name {
+    margin-bottom: 8px;
+  }
+
+  body.login-page .login-title {
+    font-size: 1.9rem;
+    line-height: 1.08;
+    margin-bottom: 7px;
+  }
+
+  body.login-page .login-form {
+    margin-top: 18px;
+  }
+
+  body.login-page .login-role-group {
+    margin-bottom: 18px !important;
+  }
+
+  body.login-page .login-field {
+    margin-bottom: 16px;
+  }
+
+  /* Preserve the requested visible gap between Password and Login. */
+  body.login-page .login-field:last-of-type {
+    margin-bottom: 26px !important;
+  }
+
+  body.login-page .login-input {
+    height: 52px;
+  }
+
+  body.login-page .login-button {
+    height: 50px;
+  }
+
+  body.login-page .login-help {
+    margin-top: 14px !important;
+    padding: 10px 12px;
+    font-size: .82rem;
+    line-height: 1.4;
+  }
+
+  /* Any dialog remains an overlay and never participates in page layout. */
+  body.login-page .modal,
+  body.login-page .modal-backdrop,
+  body.login-page [role="dialog"] {
+    position: fixed !important;
+  }
+}
+
+/* Team member picker: keep the popup below the fixed-height navigation area. */
+#teamMemberModal .modal-dialog {
+  margin-top: 100px;
+}
+
+@media (max-width: 767.98px) {
+  #teamMemberModal .modal-dialog {
+    margin-top: 88px;
+  }
+}
+
+/* Final correction: mentor department checkbox labels should use normal weight */
+.mentor-department-option,
+.mentor-department-option span {
+  font-weight: 400 !important;
+}
+
+/* Login page: fill the available viewport from top to bottom on desktop. */
+@media (min-width: 576px) {
+  body.login-page {
+    padding: 0;
+  }
+  body.login-page .login-shell {
+    width: 540px;
+    max-width: 100vw;
+    height: 100vh;
+  }
+  body.login-page .login-card {
+    width: 100%;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+  }
+  body.login-page .login-card .card-body {
+    height: 100%;
+    max-height: none;
+    overflow: hidden;
+  }
+}
+
+
+@media (max-width: 991.98px) {
+  .login-page { padding: 20px 12px; }
+  .login-shell { width: 100%; min-height: auto; }
+  .login-card { min-height: auto; border-radius: 18px; }
 }

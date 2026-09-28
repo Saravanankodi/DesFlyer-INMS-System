@@ -17,9 +17,6 @@ The admin can:
 
 The currently logged-in admin account cannot delete itself.
 
-## Forgot password
-`/forgot-password` lets a user reset their password using their username/email and a new password. This is suitable for the local JSON-based internship project. A production system should send a verified password-reset link by email instead.
-
 ## Password storage
 Passwords are stored as PBKDF2-SHA256 hashes in `users.json`, not as plain text.
 

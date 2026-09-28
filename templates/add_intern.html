@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Edit Intern' if intern else 'Add Intern' }}{% endblock %}
 {% block content %}
-<div class="fixed-form-page people-form-page">
+<div class="fixed-form-page people-form-page intern-form-page">
   <div class="page-heading compact-heading">
     <div><span class="eyebrow">People directory</span><h1>{{ 'Edit intern details' if intern else 'Add a new intern' }}</h1></div>
-    <a class="btn btn-outline-secondary" href="{{ url_for('view_interns') }}"><i class="bi bi-arrow-left"></i> Back to interns</a>
+    <a class="history-back-button btn btn-outline-secondary" href="#"><i class="bi bi-arrow-left"></i> Back to interns</a>
   </div>
 
   <form method="post" enctype="multipart/form-data" class="card form-card compact-form-card">
@@ -39,7 +39,7 @@
         </div>
       </div>
       <div class="mt-4 d-flex justify-content-end gap-2">
-        <a class="btn btn-outline-secondary" href="{{ url_for('view_interns') }}">Cancel</a>
+        <a class="history-back-button btn btn-outline-secondary" href="#">Cancel</a>
         <button class="btn btn-primary px-4 add-person-action" type="submit"><i class="bi bi-check2-circle"></i> {{ 'Save changes' if intern else 'Add intern' }}</button>
       </div>
     </div>

@@ -1,14 +1,1 @@
-[
-  {
-    "name": "subash",
-    "email": "subash@gmail.com",
-    "phone": "7894561230",
-    "department": "Python Development",
-    "joining_date": "2026-09-14",
-    "duration_months": 3,
-    "id": "DFIN001",
-    "assigned_mentor": "",
-    "end_date": "2026-12-14",
-    "employment_status": "Active Intern"
-  }
-]
+[]

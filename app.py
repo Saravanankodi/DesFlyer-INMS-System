@@ -340,6 +340,8 @@ def task_intern_files(task, tasks, interns, user=None):
         for record in related_task.get("intern_files", []) or []:
             if user.get("role") == "intern" and record.get("intern_id") != user.get("intern_id"):
                 continue
+            if user.get("role") == "admin" and not record.get("sent_to_admin"):
+                continue
             if user.get("role") == "mentor":
                 if not mentor_can_access_task(user, related_task, interns):
                     continue
@@ -1229,7 +1231,8 @@ def view_tasks():
         return render_template("tasks.html", is_mentor=True,
                                tasks=decorate_tasks(visible, interns),
                                admin_tasks=decorate_tasks(admin_tasks, interns),
-                               mentor_subtasks=decorate_tasks(mentor_subtasks, interns))
+                               mentor_subtasks=decorate_tasks(mentor_subtasks, interns),
+                               departments=sorted({str(t.get("department") or "").strip() for t in visible if str(t.get("department") or "").strip()}))
     # Admins should see only tasks assigned/created by the admin.
     # Mentor-created subtasks must remain in the mentor workflow and must not
     # appear in the main admin Tasks list.
@@ -1238,7 +1241,8 @@ def view_tasks():
         if t.get("created_by_role", "admin") != "mentor" and not t.get("parent_task_id")
     ]
     return render_template("tasks.html", is_mentor=False, tasks=decorate_tasks(admin_tasks, interns),
-                           admin_tasks=[], mentor_subtasks=[])
+                           admin_tasks=[], mentor_subtasks=[],
+                           departments=sorted({str(t.get("department") or "").strip() for t in admin_tasks if str(t.get("department") or "").strip()}))
 
 
 @app.get("/tasks/<task_id>")
@@ -1268,6 +1272,7 @@ def view_task(task_id):
                 intern.get("assigned_mentor"), "Unassigned")})
     decorated = decorate_tasks([task], interns)[0]
     parent = parent_admin_task(task, tasks)
+    decorated["parent_task_title"] = parent.get("title") if parent else ""
     decorated["parent_final_project_file"] = parent.get("final_project_file") if parent else None
     decorated["intern_project_file"] = task.get("intern_project_file")
     decorated["final_project_file"] = task.get("final_project_file")
@@ -1329,8 +1334,10 @@ def assign_task():
             flash("Select a mentor for this task.", "danger")
         elif role_required("admin") and department not in mentor_departments(selected_mentor):
             flash("The selected mentor is not assigned to this department.", "danger")
-        elif not department or not selected_ids or not title or not start_date or not request.form.get("deadline", ""):
-            flash("Select a department and at least one intern, then provide a title, starting date, and deadline.", "danger")
+        elif not department or not title or not start_date or not request.form.get("deadline", ""):
+            flash("Select a department, then provide a title, starting date, and deadline.", "danger")
+        elif not selected_ids:
+            flash("Choose at least one team member." if task_type == "Team Work" else "Choose an intern.", "danger")
         elif any(item not in valid_ids for item in selected_ids):
             flash("You cannot assign a task to that intern.", "danger")
         elif any(next((i.get("department") for i in interns if i.get("id") == item), "") != department for item in selected_ids):
@@ -1478,7 +1485,11 @@ def edit_task(task_id):
             flash("Choose a different admin-created parent project before editing this task.", "danger")
         elif role_required("mentor") and (department not in mentor_depts or (selected_parent and selected_parent.get("department", "") not in mentor_depts)):
             flash("You can only edit work in your assigned departments.", "danger")
-        elif task_type not in ("Individual Work", "Team Work") or not selected_ids or any(item not in {i.get("id") for i in active_interns} for item in selected_ids):
+        elif task_type not in ("Individual Work", "Team Work"):
+            flash("Select a valid task type.", "danger")
+        elif not selected_ids:
+            flash("Choose at least one team member." if task_type == "Team Work" else "Choose an intern.", "danger")
+        elif any(item not in {i.get("id") for i in active_interns} for item in selected_ids):
             flash("You cannot assign this task to that intern.", "danger")
         elif not department:
             flash("Select a department.", "danger")
@@ -1615,6 +1626,28 @@ def mark_notification_read(notification_id):
     if len(updated_notifications) != len(notifications):
         save_json(NOTIFICATIONS_FILE, updated_notifications)
 
+    return redirect(request.referrer or url_for("home"))
+
+
+@app.post("/notifications/read-all")
+def mark_all_notifications_read():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    user_id = current_user().get("id")
+    notifications = load_json(NOTIFICATIONS_FILE)
+    user_notifications = [
+        notification for notification in notifications
+        if notification.get("recipient_id") == user_id
+    ]
+    remaining = [
+        notification for notification in notifications
+        if notification.get("recipient_id") != user_id
+    ]
+    if len(remaining) != len(notifications):
+        save_json(NOTIFICATIONS_FILE, remaining)
+    if user_notifications:
+        flash("All notifications marked as read.", "success")
     return redirect(request.referrer or url_for("home"))
 
 
@@ -1886,6 +1919,36 @@ def upload_intern_file(task_id):
     return redirect(url_for("view_task", task_id=task_id))
 
 
+@app.get("/mentor/tasks/<task_id>/files/<file_id>/preview")
+def preview_intern_file(task_id, file_id):
+    """Open an uploaded intern file in the browser when the file type supports inline viewing."""
+    user = current_user()
+    if not user or user.get("role") not in {"mentor", "intern"}:
+        return redirect(url_for("home"))
+    interns, tasks, _ = get_data()
+    task = next((t for t in tasks if t.get("id") == task_id), None)
+    if not task:
+        flash("Task not found.", "danger")
+        return redirect(url_for("home"))
+    if user.get("role") == "mentor":
+        if not mentor_can_access_task(user, task, interns):
+            flash("You cannot access this file.", "danger")
+            return redirect(url_for("mentor_dashboard"))
+    else:
+        if user.get("intern_id") not in set(task.get("assigned_intern_ids") or [task.get("intern_id")]):
+            flash("You cannot access this file.", "danger")
+            return redirect(url_for("intern_dashboard"))
+    record = next((item for item in task.get("intern_files", []) or [] if item.get("id") == file_id), None)
+    if not record:
+        flash("File not found.", "danger")
+        return redirect(request.referrer or url_for("home"))
+    path = intern_file_path(record)
+    if not path:
+        flash("The uploaded file is no longer available.", "danger")
+        return redirect(request.referrer or url_for("home"))
+    return send_file(path, as_attachment=False, download_name=record.get("filename", path.name))
+
+
 @app.get("/mentor/tasks/<task_id>/files/<file_id>/download")
 def download_intern_file(task_id, file_id):
     user = current_user()
@@ -1913,6 +1976,44 @@ def download_intern_file(task_id, file_id):
         flash("The uploaded file is no longer available.", "danger")
         return redirect(request.referrer or url_for("home"))
     return send_file(path, as_attachment=True, download_name=record.get("filename", path.name))
+
+
+@app.get("/admin/tasks/<task_id>/files/<file_id>/download")
+def admin_download_intern_file(task_id, file_id):
+    if not role_required("admin"):
+        flash("Only admins can download these files.", "danger")
+        return redirect(url_for("home"))
+    _, tasks, _ = get_data()
+    task = next((item for item in tasks if item.get("id") == task_id), None)
+    parent = parent_admin_task(task, tasks) if task else None
+    record = next((item for item in (task or {}).get("intern_files", []) or [] if item.get("id") == file_id), None)
+    if not parent or not record or not record.get("sent_to_admin"):
+        flash("File not found.", "danger")
+        return redirect(url_for("dashboard"))
+    path = intern_file_path(record)
+    if not path:
+        flash("The uploaded file is no longer available.", "danger")
+        return redirect(url_for("dashboard"))
+    return send_file(path, as_attachment=True, download_name=record.get("filename", path.name))
+
+
+@app.get("/admin/tasks/<task_id>/files/<file_id>/preview")
+def admin_preview_intern_file(task_id, file_id):
+    if not role_required("admin"):
+        flash("Only admins can preview these files.", "danger")
+        return redirect(url_for("home"))
+    _, tasks, _ = get_data()
+    task = next((item for item in tasks if item.get("id") == task_id), None)
+    parent = parent_admin_task(task, tasks) if task else None
+    record = next((item for item in (task or {}).get("intern_files", []) or [] if item.get("id") == file_id), None)
+    if not parent or not record or not record.get("sent_to_admin"):
+        flash("File not found.", "danger")
+        return redirect(url_for("dashboard"))
+    path = intern_file_path(record)
+    if not path:
+        flash("The uploaded file is no longer available.", "danger")
+        return redirect(url_for("dashboard"))
+    return send_file(path, as_attachment=False, download_name=record.get("filename", path.name))
 
 
 @app.post("/mentor/tasks/<task_id>/files/<file_id>/delete")
@@ -1943,78 +2044,64 @@ def delete_intern_file(task_id, file_id):
     return redirect(request.referrer or url_for("mentor_dashboard"))
 
 
+@app.post("/admin/tasks/<task_id>/files/<file_id>/delete")
+def admin_delete_intern_file(task_id, file_id):
+    if not role_required("admin"):
+        flash("Only admins can delete these files.", "danger")
+        return redirect(url_for("home"))
+    _, tasks, _ = get_data()
+    task = next((item for item in tasks if item.get("id") == task_id), None)
+    parent = parent_admin_task(task, tasks) if task else None
+    files = (task or {}).get("intern_files", []) or []
+    record = next((item for item in files if item.get("id") == file_id), None)
+    if not parent or not record or not record.get("sent_to_admin"):
+        flash("File not found.", "danger")
+        return redirect(url_for("dashboard"))
+    path = intern_file_path(record)
+    if path:
+        path.unlink(missing_ok=True)
+    task["intern_files"] = [item for item in files if item.get("id") != file_id]
+    save_json(TASKS_FILE, tasks)
+    flash(f"{record.get('filename', 'File')} deleted successfully.", "success")
+    return redirect(url_for("dashboard"))
+
+
 @app.post("/mentor/admin-tasks/<task_id>/collect-submit")
 def collect_and_submit_files(task_id):
     if not role_required("mentor"):
-        flash("Only mentors can submit collected intern files.", "danger")
+        flash("Only mentors can submit these files.", "danger")
         return redirect(url_for("home"))
     interns, tasks, _ = get_data()
-    user = current_user()
     parent = next((t for t in tasks if t.get("id") == task_id and t.get("created_by_role", "admin") == "admin"), None)
-    if not parent:
-        flash("Admin task not found.", "danger")
-        return redirect(url_for("mentor_dashboard"))
-    if not mentor_can_access_task(user, parent, interns):
-        flash("You cannot submit files for this admin task.", "danger")
+    if not parent or not mentor_can_access_task(current_user(), parent, interns):
+        flash("You cannot access this admin task.", "danger")
         return redirect(url_for("mentor_dashboard"))
     related = [parent] + [t for t in tasks if t.get("parent_task_id") == parent.get("id")]
-    selected_ids = {str(value) for value in request.form.getlist("file_ids") if value}
-    entries = []
-    allowed_intern_ids = set()
+    allowed_ids = set()
     for row in related:
-        allowed_intern_ids.update(row.get("assigned_intern_ids") or [row.get("intern_id")])
+        allowed_ids.update(row.get("assigned_intern_ids") or [row.get("intern_id")])
+    submitted = 0
     for row in related:
         for record in row.get("intern_files", []) or []:
-            if record.get("intern_id") not in allowed_intern_ids:
+            if record.get("intern_id") not in allowed_ids or not intern_file_path(record):
                 continue
-            if selected_ids and str(record.get("id")) not in selected_ids:
-                continue
-            path = intern_file_path(record)
-            if path:
-                entries.append((row, record, path))
-    if not entries:
-        if selected_ids:
-            flash("Choose at least one available intern file to upload to Admin.", "warning")
-        else:
-            flash("No intern files are available to collect for this admin task.", "warning")
-        return redirect(url_for("view_task", task_id=parent.get("id")))
-    stored_name = f"final_{parent.get('id', 'project')}_{uuid4().hex[:10]}.zip"
-    zip_path = PROJECT_UPLOAD_DIR / stored_name
-    intern_map = {i.get("id"): i.get("name", "Intern") for i in interns}
-    used_names = set()
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for row, record, path in entries:
-            intern_name = secure_filename(intern_map.get(record.get("intern_id"), record.get("intern_name", "Intern"))) or "Intern"
-            task_folder = secure_filename(row.get("id", "task")) or "task"
-            filename = secure_filename(record.get("filename", path.name)) or path.name
-            arcname = f"{intern_name}/{task_folder}/{filename}"
-            base_arcname = arcname
-            counter = 2
-            while arcname in used_names:
-                stem, dot, suffix = base_arcname.rpartition(".")
-                arcname = f"{stem}_{counter}{dot}{suffix}" if dot else f"{base_arcname}_{counter}"
-                counter += 1
-            used_names.add(arcname)
-            archive.write(path, arcname=arcname)
-    old_final = project_path(parent.get("final_project_file"))
-    if old_final and old_final != zip_path:
-        old_final.unlink(missing_ok=True)
-    parent["final_project_file"] = {"filename": f"{parent.get('id', 'task')}_final_submission.zip", "stored_name": stored_name}
-    parent["final_project_submitted_by"] = user.get("username", "Mentor")
-    parent["final_project_submitted_at"] = notification_timestamp()
-    parent["final_project_source"] = "Collected intern files"
+            if not record.get("sent_to_admin"):
+                record["sent_to_admin"] = True
+                record["sent_to_admin_at"] = notification_timestamp()
+                record["sent_to_admin_by"] = current_user().get("username", "Mentor")
+                submitted += 1
     save_json(TASKS_FILE, tasks)
-    notify_users(admin_user_ids(), parent, user.get("username", "Mentor"), "Submitted the collected intern files as a single ZIP")
-    if selected_ids:
-        flash("Selected intern files were collected and submitted to the admin as one ZIP.", "success")
+    if submitted:
+        notify_users(admin_user_ids(), parent, current_user().get("username", "Mentor"), f"Sent {submitted} file(s) individually to Admin")
+        flash(f"{submitted} file(s) sent individually to Admin.", "success")
     else:
-        flash("All available intern files were collected and submitted to the admin as one ZIP.", "success")
+        flash("No new uploaded files were available to send.", "info")
     return redirect(url_for("view_task", task_id=parent.get("id")))
 
 
 @app.post("/mentor/admin-tasks/<task_id>/upload-to-admin")
 def mentor_upload_to_admin(task_id):
-    """Allow a mentor to choose local files and submit them to Admin as one ZIP."""
+    """Store mentor uploads individually so Admin can download or delete each file."""
     if not role_required("mentor"):
         flash("Only mentors can upload files to Admin.", "danger")
         return redirect(url_for("home"))
@@ -2034,53 +2121,34 @@ def mentor_upload_to_admin(task_id):
         flash("Choose at least one file to upload to Admin.", "warning")
         return redirect(url_for("view_task", task_id=parent.get("id")))
 
-    temp_files = []
-    try:
-        for storage in uploads:
-            uploaded = save_upload(storage, PROJECT_UPLOAD_DIR, f"admin_collect_{parent.get('id', 'task')}")
-            if uploaded:
-                temp_files.append(uploaded)
-        if not temp_files:
-            flash("No valid files were selected.", "warning")
-            return redirect(url_for("view_task", task_id=parent.get("id")))
-
-        stored_name = f"final_{parent.get('id', 'project')}_{uuid4().hex[:10]}.zip"
-        zip_path = PROJECT_UPLOAD_DIR / stored_name
-        used_names = set()
-        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for uploaded in temp_files:
-                source = PROJECT_UPLOAD_DIR / uploaded["stored_name"]
-                if not source.exists():
-                    continue
-                filename = secure_filename(uploaded.get("filename", source.name)) or source.name
-                arcname = filename
-                base = arcname
-                counter = 2
-                while arcname in used_names:
-                    stem, dot, suffix = base.rpartition(".")
-                    arcname = f"{stem}_{counter}{dot}{suffix}" if dot else f"{base}_{counter}"
-                    counter += 1
-                used_names.add(arcname)
-                archive.write(source, arcname=arcname)
-
-        old_final = project_path(parent.get("final_project_file"))
-        if old_final and old_final != zip_path:
-            old_final.unlink(missing_ok=True)
-        parent["final_project_file"] = {
-            "filename": f"{parent.get('id', 'task')}_final_submission.zip",
-            "stored_name": stored_name,
-        }
-        parent["final_project_submitted_by"] = user.get("username", "Mentor")
-        parent["final_project_submitted_at"] = notification_timestamp()
-        parent["final_project_source"] = "Mentor selected files"
-        save_json(TASKS_FILE, tasks)
-        notify_users(admin_user_ids(), parent, user.get("username", "Mentor"), "Uploaded selected files to Admin as a single ZIP")
-        flash(f"{len(temp_files)} file(s) uploaded to Admin as one ZIP successfully.", "success")
-    finally:
-        # The files are packaged into the final ZIP, so the temporary copies are no longer needed.
-        for uploaded in temp_files:
-            (PROJECT_UPLOAD_DIR / uploaded["stored_name"]).unlink(missing_ok=True)
-
+    intern_ids = [value for value in (parent.get("assigned_intern_ids") or [parent.get("intern_id")]) if value]
+    intern_id = intern_ids[0] if intern_ids else None
+    intern = next((item for item in interns if item.get("id") == intern_id), {})
+    saved = []
+    for storage in uploads:
+        uploaded = save_upload(storage, INTERN_FILES_DIR, f"{parent.get('id', 'task')}_mentor")
+        if not uploaded:
+            continue
+        uploaded.update({
+            "id": uuid4().hex,
+            "task_id": parent.get("id"),
+            "intern_id": intern_id,
+            "intern_name": intern.get("name", "Mentor upload"),
+            "uploaded_by": user.get("username", "Mentor"),
+            "uploaded_by_role": "mentor",
+            "uploaded_at": notification_timestamp(),
+            "sent_to_admin": True,
+            "sent_to_admin_at": notification_timestamp(),
+            "sent_to_admin_by": user.get("username", "Mentor"),
+        })
+        parent.setdefault("intern_files", []).append(uploaded)
+        saved.append(uploaded)
+    if not saved:
+        flash("No valid files were selected.", "warning")
+        return redirect(url_for("view_task", task_id=parent.get("id")))
+    save_json(TASKS_FILE, tasks)
+    notify_users(admin_user_ids(), parent, user.get("username", "Mentor"), f"Uploaded {len(saved)} file(s) individually to Admin")
+    flash(f"{len(saved)} file(s) uploaded individually to the admin dashboard.", "success")
     return redirect(url_for("view_task", task_id=parent.get("id")))
 
 

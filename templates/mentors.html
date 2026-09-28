@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Mentors{% endblock %}
 {% block content %}
-<div class="page-heading">
+<div class="page-heading mentors-page fw-page-heading">
   <div><span class="eyebrow">People directory</span><h1>Mentors</h1><p class="text-muted">Create mentor profiles and manage their contact details and documents.</p></div>
   <a class="btn btn-primary add-person-action" href="{{ url_for('add_mentor') }}"><i class="bi bi-person-plus-fill"></i> Add mentor</a>
 </div>
@@ -16,24 +16,25 @@
 </div>
 <div class="card table-card">
   <div class="table-scroll">
-    <table class="table align-middle mb-0"><thead><tr><th>Mentor ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Departments</th><th class="intern-count-column">Interns</th><th class="table-actions">Actions</th></tr></thead>
+    <table class="table align-middle mb-0"><thead><tr><th>Mentor ID</th><th>Name</th><th>Email</th><th>Phone</th><th class="department-header" style="text-align:center!important;">Departments</th><th class="intern-count-column">Interns</th><th class="table-actions">Actions</th></tr></thead>
     <tbody>
     {% for mentor in mentors %}
     <tr class="mentor-row" data-search="{{ mentor.id|lower }} {{ mentor.name|lower }} {{ mentor.email|lower }}" data-department="{{ mentor.departments|join("|")|lower }}">
       <td>{{ mentor.id }}</td><td><strong>{{ mentor.name }}</strong></td><td>{{ mentor.email }}</td><td>{{ mentor.phone }}</td>
-      <td>{% for department in mentor.departments %}<span class="badge department-badge me-1 mb-1">{{ department }}</span>{% else %}<span class="text-muted">Not set</span>{% endfor %}</td><td class="intern-count-column">{{ mentor.assigned_count }}</td>
-      <td class="table-actions text-nowrap directory-actions"><a class="btn btn-sm btn-light" title="View mentor profile" aria-label="View mentor profile" href="{{ url_for('view_mentor_profile', mentor_id=mentor.id) }}"><i class="bi bi-eye"></i></a><a class="btn btn-sm btn-light" href="{{ url_for('edit_mentor', mentor_id=mentor.id) }}"><i class="bi bi-pencil"></i></a>
-      <form class="d-inline delete-record-form" method="post" action="{{ url_for('delete_mentor', mentor_id=mentor.id) }}" data-delete-name="{{ mentor.name }}"><button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash3"></i></button></form></td>
+      <td class="department-cell">{% if mentor.departments %}<div class="department-badges">{% for department in mentor.departments %}<div class="department-item"><span class="badge department-badge">{{ department }}</span></div>{% endfor %}</div>{% else %}<span class="text-muted">Not set</span>{% endif %}</td><td class="intern-count-column">{{ mentor.assigned_count }}</td>
+      <td class="table-actions text-nowrap directory-actions"><a class="btn btn-sm btn-light shared-action-button" title="View mentor profile" aria-label="View mentor profile" href="{{ url_for('view_mentor_profile', mentor_id=mentor.id) }}"><i class="bi bi-eye"></i></a><a class="btn btn-sm btn-light shared-action-button" href="{{ url_for('edit_mentor', mentor_id=mentor.id) }}"><i class="bi bi-pencil"></i></a>
+      <form class="d-inline delete-record-form" method="post" action="{{ url_for('delete_mentor', mentor_id=mentor.id) }}" data-delete-name="{{ mentor.name }}"><button class="btn btn-sm btn-light text-danger shared-action-button"><i class="bi bi-trash3"></i></button></form></td>
     </tr>
     {% else %}<tr><td colspan="7" class="empty-state">No mentors yet.</td></tr>{% endfor %}
     </tbody></table>
   </div>
   <div id="noMentorMatches" class="empty-state d-none">No mentors found.</div>
 </div>
-<script>
+<script>{% raw %}
 const mentorRows=[...document.querySelectorAll(".mentor-row")], mentorSearch=document.getElementById("mentorSearch"), mentorDepartment=document.getElementById("mentorDepartment");
 function filterMentors(){const q=mentorSearch.value.trim().toLowerCase(),d=mentorDepartment.value;let n=0;mentorRows.forEach(r=>{const ok=(!q||r.dataset.search.includes(q))&&(!d||r.dataset.department.split("|").includes(d));r.classList.toggle("d-none",!ok);if(ok)n++});document.getElementById("noMentorMatches").classList.toggle("d-none",n!==0)}
 [mentorSearch,mentorDepartment].forEach(e=>e.addEventListener("input",filterMentors));
 document.getElementById("clearMentorFilters").addEventListener("click",()=>{mentorSearch.value="";mentorDepartment.value="";filterMentors()});
-</script>
+{% endraw %}</script>
+
 {% endblock %}

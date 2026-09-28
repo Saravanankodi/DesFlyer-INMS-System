@@ -7,7 +7,7 @@
 <div class="row g-4 user-management-row">
   <div class="col-lg-5">
     <div class="card users-create-card"><div class="card-body p-4">
-      <span class="eyebrow">Create account</span><h2 class="mt-2 mb-4">New user</h2>
+      <span class="eyebrow">Create account</span><h3 class="mt-2 mb-4">New user</h3>
       <form method="post">
         <div class="mb-3"><label class="form-label">Username</label><input class="form-control" name="username" placeholder="e.g. arun123" required></div>
         <div class="mb-3"><label class="form-label">Email</label><input class="form-control" type="email" name="email" placeholder="user@example.com" required></div>
@@ -20,7 +20,7 @@
   </div>
   <div class="col-lg-7">
     <div class="card table-card users-table-card"><div class="table-responsive users-table-scroll"><table class="table align-middle mb-0"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th class="user-actions-heading">Actions</th></tr></thead><tbody>
-    {% for user in users %}<tr><td><strong>{{ user.username }}</strong></td><td>{{ user.email }}</td><td><span class="user-role {{ user.role }}">{{ user.role|upper }}</span></td><td class="user-actions-cell"><div class="user-action-buttons"><a class="btn btn-sm btn-light user-action-icon" href="{{ url_for('edit_user', user_id=user.id) }}" title="Edit" aria-label="Edit user"><i class="bi bi-pencil"></i></a><form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" class="user-delete-form" onsubmit="return confirm('Delete this user account?');"><button class="btn btn-sm btn-light user-action-icon user-delete-button" type="submit" title="Delete" aria-label="Delete user"><i class="bi bi-trash"></i></button></form></div></td></tr>
+    {% for user in users %}<tr><td><strong>{{ user.username }}</strong></td><td>{{ user.email }}</td><td><span class="user-role {{ user.role }}">{{ user.role|upper }}</span></td><td class="user-actions-cell"><div class="user-action-buttons"><a class="btn btn-sm btn-light user-action-icon" href="{{ url_for('edit_user', user_id=user.id) }}" title="Edit" aria-label="Edit user"><i class="bi bi-pencil"></i></a><form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" class="delete-record-form" data-delete-name="{{ user.username }}'s account" data-delete-message="This will permanently delete this login account."><button class="btn btn-sm btn-light user-action-icon user-delete-button" type="submit" title="Delete" aria-label="Delete user"><i class="bi bi-trash"></i></button></form></div></td></tr>
     {% else %}<tr><td colspan="4" class="empty-state">No login accounts found.</td></tr>{% endfor %}
     </tbody></table></div></div>
   </div>

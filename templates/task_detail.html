@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-heading">
   <div><span class="eyebrow">Delivery pipeline</span><h1>Task details</h1><p class="text-muted">Review the complete assignment and ownership information.</p></div>
-  <a class="btn btn-outline-secondary" href="{{ url_for('home') }}"><i class="bi bi-arrow-left"></i> Back</a>
+  <a class="history-back-button btn btn-outline-secondary" href="#"><i class="bi bi-arrow-left"></i> Back</a>
 </div>
 
 <section class="card detail-card mb-4"><div class="card-body p-4 p-lg-5">
@@ -32,58 +32,49 @@
     </div>
   </div>
 
-  <div class="task-detail-meta task-detail-meta-six">
+  <div class="task-detail-meta">
     <div><small class="text-muted d-block">Task ID</small><strong>{{ task.id }}</strong></div>
-    <div><small class="text-muted d-block">Admin Task</small><strong>{{ task.parent_task_title or task.parent_task_id or '—' }}</strong></div>
     <div><small class="text-muted d-block">Department</small><strong>{{ task.department or 'Not set' }}</strong></div>
     <div><small class="text-muted d-block">Priority</small><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></div>
     <div><small class="text-muted d-block">Start Date</small><strong>{{ task.start_date or 'Not set' }}</strong></div>
-    <div><small class="text-muted d-block">Due Date</small><strong>{{ task.deadline_display }}</strong></div>
+    <div><small class="text-muted d-block">End Date</small><strong>{{ task.deadline_display }}</strong></div>
   </div>
 
-  {% if current_user.role == 'admin' %}
-  <div class="submission-detail-card mt-4">
-    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-      <div><span class="eyebrow">Final submission</span><h3 class="h5 mb-1">Project submitted by Mentor</h3><p class="text-muted small mb-0">The final combined ZIP collected from the interns.</p></div>
-      {% if task.final_project_file %}<a class="btn btn-sm btn-light" href="{{ url_for('download_project', task_id=task.id) }}"><i class="bi bi-file-earmark-zip"></i> Download final ZIP</a>{% else %}<span class="badge-soft px-3 py-2">Not submitted yet</span>{% endif %}
-    </div>
-  </div>
-  {% endif %}
 </div></section>
 
-<section class="card table-card"><div class="card-body p-0"><div class="p-4 pb-2"><h2 class="h5 mb-1">Assigned interns</h2><p class="text-muted small mb-0">Intern details associated with this task.</p></div><div class="table-scroll"><table class="table align-middle mb-0"><thead><tr><th>Intern ID</th><th>Intern Name</th><th>Department</th><th>Start date</th><th>Duration</th><th>End date</th><th>Mentor</th><th>Status</th></tr></thead><tbody>
+<section class="card table-card"><div class="card-body p-0"><div class="p-4 pb-2"><h2 class="h5 mb-1">Assigned interns</h2><p class="text-muted small mb-0">Intern details associated with this task.</p></div><div class="table-scroll"><table class="table align-middle mb-0"><thead><tr><th>Intern ID</th><th>Intern Name</th><th class="department-header">Department</th><th>Start date</th><th>Duration</th><th>End date</th><th>Mentor</th><th>Status</th></tr></thead><tbody>
 {% for intern in assigned_interns %}<tr><td>{{ intern.id }}</td><td><strong>{{ intern.name }}</strong></td><td>{{ intern.department }}</td><td>{{ intern.joining_date }}</td><td>{{ intern.duration_months }} months</td><td>{{ intern.end_date or 'Not set' }}</td><td>{{ intern.mentor_name }}</td><td><span class="badge {{ 'status-active' if intern.employment_status == 'Active Intern' else 'status-past' }}">{{ intern.employment_status }}</span></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No assigned intern details available.</td></tr>{% endfor %}
 </tbody></table></div></div></section>
 
-{% if current_user.role != 'admin' %}
 <section class="card table-card mt-4 intern-files-panel"><div class="card-body p-0">
   <div class="p-4 pb-2 d-flex justify-content-between align-items-center gap-3 flex-wrap">
     <div>
       <span class="eyebrow">Intern files</span>
       <h2 class="h4 mb-1">Files from Intern</h2>
-      {% if current_user.role == 'intern' %}
+      {% if current_user.role == 'admin' %}
+      <p class="text-muted small mb-0">Download or delete individual files uploaded by interns and their mentors.</p>
+      {% elif current_user.role == 'intern' %}
       <p class="text-muted small mb-0">Upload files here one at a time. These files are sent only to your mentor.</p>
       {% else %}
-      <p class="text-muted small mb-0">Review files uploaded by your interns. Select the files you want to send to Admin as one ZIP.</p>
+      <p class="text-muted small mb-0">Review your interns’ files and send them to Admin individually.</p>
       {% endif %}
     </div>
   </div>
   {% if current_user.role == 'intern' %}
   <div class="px-4 pb-3">
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_intern_file', task_id=task.id) }}" class="d-flex align-items-center gap-2 flex-wrap">
-      <input class="form-control" style="max-width:650px" type="file" name="mentor_file" required>
-      <button class="btn btn-primary" type="submit"><i class="bi bi-upload"></i> Upload to mentor</button>
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_intern_file', task_id=task.id) }}" class="intern-file-upload-form d-flex align-items-center gap-2 flex-wrap">
+      <input class="form-control intern-file-input" type="file" name="mentor_file" required>
+      <button class="btn btn-primary intern-upload-btn" type="submit"><i class="bi bi-upload"></i> Upload files to mentor</button>
     </form>
-    <div class="form-text">Upload one file at a time. PDF, ZIP, DOCX, images, videos, or other file types are accepted.</div>
+    <div class="form-text">Choose a file and upload it directly to your assigned mentor.</div>
   </div>
   {% endif %}
   {% if current_user.role == 'mentor' and task.created_by_role|default('admin') == 'admin' and not task.parent_task_id %}
   <div class="px-4 pb-3">
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('mentor_upload_to_admin', task_id=task.id) }}" class="d-flex align-items-center gap-2 flex-wrap">
-      <input class="form-control" style="max-width:650px" type="file" name="admin_file" required multiple>
-      <button class="btn btn-primary" type="submit"><i class="bi bi-upload"></i> Upload to Admin</button>
+    <form method="post" action="{{ url_for('collect_and_submit_files', task_id=task.id) }}" class="intern-file-upload-form d-flex align-items-center gap-2 flex-wrap">
+      <button class="btn btn-primary intern-upload-btn" type="submit"><i class="bi bi-upload"></i> Upload files to Admin</button>
     </form>
-    <div class="form-text">Choose one or more files and send them to Admin as a single ZIP. You can first download files from the table below if you need to collect intern submissions.</div>
+    <div class="form-text">Click once to send all available intern files for this task and its mentor subtasks to Admin individually. No ZIP is created.</div>
   </div>
   {% endif %}
   <div class="table-scroll intern-files-table-scroll">
@@ -95,10 +86,10 @@
           <td class="file-name-cell"><strong>{{ file.filename }}</strong></td>
           <td>{{ file.intern_name }}</td>
           <td>{{ file.task_title }}</td>
-          <td>{{ file.uploaded_at }}</td>
+          <td>{{ file.uploaded_at[:10] if file.uploaded_at else '' }}</td>
           <td class="table-actions task-actions intern-file-actions">
-            {% if current_user.role in ['mentor', 'intern'] %}<a class="btn btn-sm btn-light" title="Download file" href="{{ url_for('download_intern_file', task_id=file.task_id, file_id=file.id) }}"><i class="bi bi-download"></i></a>{% endif %}
-            {% if current_user.role == 'mentor' %}<form method="post" action="{{ url_for('delete_intern_file', task_id=file.task_id, file_id=file.id) }}" onsubmit="return confirm('Delete this intern file?');"><button class="btn btn-sm btn-light" type="submit" title="Delete file"><i class="bi bi-trash"></i></button></form>{% endif %}
+            {% if current_user.role in ['mentor', 'intern'] %}<a class="btn btn-sm btn-light" title="View file" target="_blank" rel="noopener" href="{{ url_for('preview_intern_file', task_id=file.task_id, file_id=file.id) }}"><i class="bi bi-eye"></i></a><a class="btn btn-sm btn-light" title="Download file" href="{{ url_for('download_intern_file', task_id=file.task_id, file_id=file.id) }}"><i class="bi bi-download"></i></a>{% elif current_user.role == 'admin' %}<a class="btn btn-sm btn-light" title="View file" target="_blank" rel="noopener" href="{{ url_for('admin_preview_intern_file', task_id=file.task_id, file_id=file.id) }}"><i class="bi bi-eye"></i></a><a class="btn btn-sm btn-light" title="Download file" href="{{ url_for('admin_download_intern_file', task_id=file.task_id, file_id=file.id) }}"><i class="bi bi-download"></i></a><form method="post" class="delete-record-form" data-delete-name="{{ file.filename }}" data-delete-message="This will permanently delete the uploaded file." action="{{ url_for('admin_delete_intern_file', task_id=file.task_id, file_id=file.id) }}"><button class="btn btn-sm btn-light text-danger" type="submit" title="Delete file"><i class="bi bi-trash3"></i></button></form>{% endif %}
+            {% if current_user.role == 'mentor' %}<form method="post" class="delete-record-form" data-delete-name="{{ file.filename }}" data-delete-message="This will permanently delete the intern's uploaded file." action="{{ url_for('delete_intern_file', task_id=file.task_id, file_id=file.id) }}"><button class="btn btn-sm btn-light" type="submit" title="Delete file"><i class="bi bi-trash"></i></button></form>{% endif %}
           </td>
         </tr>
       {% else %}
@@ -108,5 +99,4 @@
     </table>
   </div>
 </div></section>
-{% endif %}
 {% endblock %}

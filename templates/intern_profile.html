@@ -9,7 +9,7 @@
   </div>
   <div class="d-flex gap-2">
     {% if intern.document %}<a class="btn btn-primary" href="{{ url_for('download_document', kind='intern', item_id=intern.id) }}"><i class="bi bi-file-earmark-arrow-down"></i> Download document</a>{% else %}<button class="btn btn-primary" type="button" disabled title="No document uploaded"><i class="bi bi-file-earmark"></i> No document uploaded</button>{% endif %}
-    <a class="btn btn-outline-secondary" href="{{ url_for('view_interns') }}"><i class="bi bi-arrow-left"></i> Back to interns</a>
+    <a class="history-back-button btn btn-outline-secondary" href="#"><i class="bi bi-arrow-left"></i> Back to interns</a>
   </div>
 </div>
 
@@ -55,19 +55,19 @@
   <div class="card-body p-4 pb-2"><span class="eyebrow">Assigned work</span><h2 class="h5 mb-1">Assigned Task List</h2></div>
   <div class="table-responsive">
     <table class="table align-middle mb-0">
-      <thead><tr><th>Task</th><th>Department</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="text-end">View</th></tr></thead>
+      <thead><tr><th>Task ID</th><th>Task</th><th class="department-header">Department</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="text-end">View</th></tr></thead>
       <tbody>
       {% for task in assigned_tasks %}
         <tr>
-          <td><strong>{{ task.title }}</strong><small class="d-block text-muted">{{ task.id }}</small></td>
-          <td>{{ task.department or intern.department }}</td>
+          <td>{{ task.id }}</td><td><strong>{{ task.title }}</strong></td>
+          <td class="department-cell">{{ task.department or intern.department }}</td>
           <td class="deadline-cell">{{ task.deadline_display }}</td>
           <td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
           <td><span class="status status-{{ task.view_status|lower|replace(' ', '-') }}">{{ task.view_status }}</span></td>
           <td class="text-end"><a class="btn btn-sm btn-light" title="View task" aria-label="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td>
         </tr>
       {% else %}
-        <tr><td colspan="6" class="empty-state">No tasks assigned yet.</td></tr>
+        <tr><td colspan="7" class="empty-state">No tasks assigned yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>

@@ -9,7 +9,7 @@
   </div>
   <div class="d-flex gap-2">
     {% if mentor.document %}<a class="btn btn-primary" href="{{ url_for('download_document', kind='mentor', item_id=mentor.id) }}"><i class="bi bi-file-earmark-arrow-down"></i> Download document</a>{% else %}<button class="btn btn-primary" type="button" disabled title="No document uploaded"><i class="bi bi-file-earmark"></i> No document uploaded</button>{% endif %}
-    <a class="btn btn-outline-secondary" href="{{ url_for('view_mentors') }}"><i class="bi bi-arrow-left"></i> Back to mentors</a>
+    <a class="history-back-button btn btn-outline-secondary" href="#"><i class="bi bi-arrow-left"></i> Back to mentors</a>
   </div>
 </div>
 
@@ -51,16 +51,16 @@
 <section class="card table-card mb-4">
   <div class="card-body p-4 pb-2"><span class="eyebrow">Assigned people</span><h2 class="h5 mb-1">Assigned Interns</h2></div>
   <div class="table-responsive"><table class="table align-middle mb-0">
-    <thead><tr><th>Intern ID</th><th>Intern Name</th><th>Department</th><th>Status</th><th>Progress</th><th class="text-end">View</th></tr></thead>
-    <tbody>{% for intern in interns %}<tr><td>{{ intern.id }}</td><td>{{ intern.name }}</td><td>{{ intern.department }}</td><td>{{ intern.employment_status }}</td><td>{{ intern.progress }}%</td><td class="text-end"><a class="btn btn-sm btn-light" title="View intern profile" href="{{ url_for('view_intern_profile', intern_id=intern.id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No interns assigned.</td></tr>{% endfor %}</tbody>
+    <thead><tr><th>Intern ID</th><th>Intern Name</th><th class="department-header">Department</th><th>Status</th><th>Progress</th><th class="text-end">View</th></tr></thead>
+    <tbody>{% for intern in interns %}<tr><td>{{ intern.id }}</td><td>{{ intern.name }}</td><td class="department-cell">{{ intern.department }}</td><td>{{ intern.employment_status }}</td><td>{{ intern.progress }}%</td><td class="text-end"><a class="btn btn-sm btn-light" title="View intern profile" href="{{ url_for('view_intern_profile', intern_id=intern.id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No interns assigned.</td></tr>{% endfor %}</tbody>
   </table></div>
 </section>
 
 <section class="card table-card">
   <div class="card-body p-4 pb-2"><span class="eyebrow">Assigned work</span><h2 class="h5 mb-1">Assigned Task List</h2></div>
   <div class="table-responsive"><table class="table align-middle mb-0">
-    <thead><tr><th>Task</th><th class="team-member-column">Team Member</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="text-end">View</th></tr></thead>
-    <tbody>{% for task in assigned_tasks %}<tr><td>{{ task.title }}<small class="d-block text-muted">{{ task.id }}</small></td><td class="team-member-column">{{ task.assigned_count }}</td><td class="deadline-cell">{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td>{{ task.view_status }}</td><td class="text-end"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No tasks assigned yet.</td></tr>{% endfor %}</tbody>
+    <thead><tr><th>Task ID</th><th>Task</th><th class="team-member-column">Team Member</th><th>Deadline</th><th>Priority</th><th>Status</th><th class="text-end">View</th></tr></thead>
+    <tbody>{% for task in assigned_tasks %}<tr><td>{{ task.id }}</td><td>{{ task.title }}</td><td class="team-member-column">{{ task.assigned_count }}</td><td class="deadline-cell">{{ task.deadline_display }}</td><td><span class="priority-{{ task.priority|lower }}">{{ task.priority }}</span></td><td>{{ task.view_status }}</td><td class="text-end"><a class="btn btn-sm btn-light" title="View task" href="{{ url_for('view_task', task_id=task.id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="7" class="empty-state">No tasks assigned yet.</td></tr>{% endfor %}</tbody>
   </table></div>
 </section>
 {% endblock %}

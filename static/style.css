@@ -554,6 +554,39 @@
   font-weight: 700;
 }
 
+.notification-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notification-header-actions form {
+  margin: 0;
+}
+
+.notification-read-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark);
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.notification-read-all:hover {
+  text-decoration: underline;
+}
+
 .notification-list {
   max-height: 390px;
   overflow-y: auto;
@@ -572,6 +605,27 @@
 
 .notification-item:last-child {
   border-bottom: 0;
+}
+
+.notification-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 2px;
+  margin: -2px;
+}
+
+.notification-link:hover .notification-item-top strong,
+.notification-link:hover p,
+.notification-link:hover small {
+  text-decoration: underline;
+}
+
+.notification-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .notification-item-top {
@@ -687,6 +741,7 @@ body {
 .mobile-side-links .mobile-assign {
   background: var(--accent);
   border-color: var(--accent);
+  color: #fff !important;
 }
 
 .btn-primary:hover,
@@ -694,6 +749,7 @@ body {
 .mobile-side-links .mobile-assign:hover {
   background: var(--accent-dark);
   border-color: var(--accent-dark);
+  color: #fff !important;
 }
 
 .btn-outline-primary {
@@ -849,7 +905,7 @@ body {
 
 .task-detail-meta {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px 18px;
   align-items: end;
 }
@@ -1274,6 +1330,9 @@ h5 {
 .users-table-scroll td:last-child {
   width: 135px;
 }
+
+/* Keep Add Mentor action buttons slightly closer to the form fields. */
+.people-form-page .people-form-actions { margin-top: 1rem !important; }
 
 /* Add Intern and Add Mentor forms: compact two-column content layout. */
 .people-form-page {
@@ -2282,26 +2341,27 @@ body .eyebrow {
   word-break: break-word;
   vertical-align: middle;
 }
+/* EQUAL SPACING - 9 columns for admin table = 11.11% each */
 .allocation-table-wrap .allocation-table th:nth-child(1),
-.allocation-table-wrap .allocation-table td:nth-child(1) { width: 9%; }
+.allocation-table-wrap .allocation-table td:nth-child(1) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(2),
-.allocation-table-wrap .allocation-table td:nth-child(2) { width: 12%; }
+.allocation-table-wrap .allocation-table td:nth-child(2) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(3),
-.allocation-table-wrap .allocation-table td:nth-child(3) { width: 11%; }
+.allocation-table-wrap .allocation-table td:nth-child(3) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(4),
-.allocation-table-wrap .allocation-table td:nth-child(4) { width: 13%; }
+.allocation-table-wrap .allocation-table td:nth-child(4) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(5),
-.allocation-table-wrap .allocation-table td:nth-child(5) { width: 17%; }
+.allocation-table-wrap .allocation-table td:nth-child(5) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(6),
-.allocation-table-wrap .allocation-table td:nth-child(6) { width: 11%; }
+.allocation-table-wrap .allocation-table td:nth-child(6) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(7),
-.allocation-table-wrap .allocation-table td:nth-child(7) { width: 8%; }
+.allocation-table-wrap .allocation-table td:nth-child(7) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(8),
-.allocation-table-wrap .allocation-table td:nth-child(8) { width: 10%; }
+.allocation-table-wrap .allocation-table td:nth-child(8) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(9),
-.allocation-table-wrap .allocation-table td:nth-child(9) { width: 9%; }
+.allocation-table-wrap .allocation-table td:nth-child(9) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:nth-child(10),
-.allocation-table-wrap .allocation-table td:nth-child(10) { width: 10%; }
+.allocation-table-wrap .allocation-table td:nth-child(10) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table th:last-child,
 .allocation-table-wrap .allocation-table td:last-child { white-space: nowrap !important; }
 @media (max-width: 991.98px) {
@@ -2346,27 +2406,27 @@ body .eyebrow {
 .allocation-table-wrap .allocation-table thead th:nth-child(9),
 .allocation-table-wrap .allocation-table tbody td:nth-child(9) { width: 8%; }
 
-/* Mentor allocation: 10 columns, with Admin Task and no separate Project ZIP column. */
+/* Mentor allocation: 9 columns with equal spacing = 11.11% each */
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(1),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(1) { width: 7%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(1) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(2),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(2) { width: 12%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(2) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(3),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(3) { width: 10%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(3) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(4),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(4) { width: 11%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(4) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(5),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(5) { width: 12%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(5) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(6),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(6) { width: 15%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(6) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(7),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(7) { width: 9%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(7) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(8),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(8) { width: 7%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(8) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(9),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(9) { width: 9%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(9) { width: 11.11% !important; }
 .allocation-table-wrap .allocation-table.mentor-allocation-table thead th:nth-child(10),
-.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(10) { width: 8%; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table tbody td:nth-child(10) { width: 11.11% !important; }
 
 /* Keep task names readable without making the whole table wider. */
 .allocation-table-wrap .allocation-table tbody td:nth-child(5),
@@ -2488,44 +2548,44 @@ body .eyebrow {
   justify-content: center !important;
   padding: 0 !important;
 }
-/* Admin/non-mentor Tasks: 9 columns. */
+/* Admin/non-mentor Tasks: 9 columns with EQUAL spacing = 11.11% each */
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 8%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 13%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 10%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 20%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 10%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 7%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 9%; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 11.11% !important; }
 .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
-.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 12%; }
-/* Mentor subtasks: 9 columns, with Intern removed. */
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 11.11% !important; }
+/* Mentor subtasks: 9 columns with EQUAL spacing = 11.11% each */
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 8%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 14%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 12%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 14%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 18%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 7%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 8%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 11.11% !important; }
 .tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
-.tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 9%; }
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 11.11% !important; }
 
 /* Mentor admin-task submission action: keep the eye/edit buttons separated while
    giving the mentor a clear Upload to Admin action. */
@@ -2540,6 +2600,27 @@ body .eyebrow {
 @media (max-width: 1200px) {
   .upload-admin-btn span { display: none; }
   .upload-admin-btn { min-width: 46px; width: 46px !important; }
+}
+
+
+/* Intern -> Mentor -> Admin upload controls */
+.intern-file-upload-form .intern-file-input {
+  max-width: 650px;
+  height: 42px;
+}
+.intern-file-upload-form .intern-upload-btn {
+  height: 42px;
+  min-height: 42px;
+  padding: 0 16px !important;
+  font-size: 15px !important;
+  white-space: nowrap;
+}
+@media (max-width: 767.98px) {
+  .intern-file-upload-form .intern-file-input,
+  .intern-file-upload-form .intern-upload-btn {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 /* Intern -> Mentor -> Admin file collection panel */
@@ -3514,42 +3595,42 @@ body .table tbody td:last-child {
 /* Task/allocation tables: rebalance the wide middle columns and reserve space
    for the complete Actions group instead of leaving large unused gaps. */
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 8% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 12% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 12% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 16% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 10% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 8% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 10% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 11.11% !important; }
 body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
-body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 13% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 11.11% !important; }
 
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 8% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 13% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 10% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 13% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 16% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 8% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 9% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 11.11% !important; }
 body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
-body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 13% !important; }
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 11.11% !important; }
 
 /* Keep action buttons evenly spaced inside the centered action column. */
 body .table .table-actions {
@@ -3913,4 +3994,1513 @@ body.login-page [role="dialog"] {
   .login-page { padding: 20px 12px; }
   .login-shell { width: 100%; min-height: auto; }
   .login-card { min-height: auto; border-radius: 18px; }
+}
+
+/* Login spacing refinement: keep the existing layout and add clear breathing room. */
+body.login-page .login-system-name {
+  margin-bottom: 16px !important;
+}
+
+body.login-page .login-title {
+  margin-bottom: 12px !important;
+}
+
+body.login-page .login-subtitle {
+  margin-bottom: 0 !important;
+}
+
+body.login-page .login-help {
+  margin-top: 24px !important;
+}
+
+/* Login page: enlarge the DesFlyer logo without changing the surrounding layout. */
+body.login-page .login-brand img {
+  height: 64px !important;
+  max-height: 64px !important;
+  width: auto !important;
+  max-width: 250px !important;
+}
+
+@media (max-width: 575.98px) {
+  body.login-page .login-brand img {
+    height: 54px !important;
+    max-height: 54px !important;
+    max-width: 230px !important;
+  }
+}
+
+
+/* Dashboard heading hierarchy: H1 is the page title; H2 is used for major section titles. */
+body.dashboard-page .page-heading h1 {
+  font-size: 2.5rem !important;
+  font-weight: 500 !important;
+  line-height: 1.15 !important;
+}
+body.dashboard-page .dashboard-panel h2,
+body.dashboard-page .section-title h2 {
+  font-size: 2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -.5px !important;
+}
+@media (max-width: 767px) {
+  body.dashboard-page .page-heading h1 {
+    font-size: 2rem !important;
+  }
+  body.dashboard-page .dashboard-panel h2,
+  body.dashboard-page .section-title h2 {
+    font-size: 1.65rem !important;
+  }
+}
+
+/* FINAL BUTTON TEXT FIX: filled action buttons use white text/icons in their normal state. */
+body .btn-primary,
+body .btn-primary i,
+body .btn-accent,
+body .btn-accent i,
+body .assign-task-action,
+body .assign-task-action i,
+body .mobile-side-links .mobile-assign,
+body .mobile-side-links .mobile-assign i {
+  color: #ffffff !important;
+}
+
+body .btn-primary:hover,
+body .btn-primary:hover i,
+body .btn-primary:focus,
+body .btn-primary:focus i,
+body .btn-primary:active,
+body .btn-primary:active i,
+body .btn-accent:hover,
+body .btn-accent:hover i,
+body .btn-accent:focus,
+body .btn-accent:focus i,
+body .btn-accent:active,
+body .btn-accent:active i,
+body .assign-task-action:hover,
+body .assign-task-action:hover i,
+body .assign-task-action:focus,
+body .assign-task-action:focus i,
+body .assign-task-action:active,
+body .assign-task-action:active i {
+  color: #ffffff !important;
+}
+
+/* Dashboard section titles: keep every major title the same size as Overall Progress. */
+body.dashboard-page .dashboard-panel h2,
+body.dashboard-page .section-title h2,
+body.dashboard-page .recently-completed-section h2 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -.5px !important;
+  text-transform: uppercase !important;
+  color: #19212a !important;
+}
+
+/* Dashboard quick links: use black text for all links, including View detailed reports. */
+body.dashboard-page .quick-links a,
+body.dashboard-page .quick-links a:first-child,
+body.dashboard-page .quick-links a span,
+body.dashboard-page .quick-links a i {
+  color: #17212b !important;
+}
+
+/* Final action-button sizing: regular text buttons match the Assign task button.
+   Small/icon-only controls remain compact so tables and notification controls are not affected. */
+body .btn:not(.btn-sm):not(.icon-action):not(.notification-button) {
+  min-width: 180px !important;
+  min-height: 52px !important;
+  padding: 13px 22px !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+
+body .btn:not(.btn-sm):not(.icon-action):not(.notification-button) i {
+  font-size: 1.1em !important;
+}
+
+@media (max-width: 575.98px) {
+  body .btn:not(.btn-sm):not(.icon-action):not(.notification-button) {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Back buttons use browser history, with the dashboard as a safe fallback. */
+body .history-back-button {
+  text-decoration: none !important;
+}
+
+/* User Management hierarchy: New User is H3, one heading level below User Management. */
+body .users-create-card h3 {
+  font-size: 1.5rem !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.5px !important;
+}
+@media (max-width: 767px) {
+  body .users-create-card h3 {
+    font-size: 1.35rem !important;
+  }
+}
+
+/* ============================================================
+   FINAL TYPOGRAPHY STANDARDIZATION
+   - Main page titles: 32px
+   - Section/eyebrow labels: 18px
+   - ALL table headers: 17px
+   - ALL table inner data: 16px
+   - Department/status/priority badges use the same 16px data size
+   - Department columns remain centered where required
+   ============================================================ */
+body .page-heading h1 {
+  font-size: 32px !important;
+  line-height: 1.2 !important;
+}
+
+body .page-heading .eyebrow,
+body .section-title .eyebrow,
+body .dashboard-panel .eyebrow,
+body .card-body > .eyebrow {
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+}
+
+/* One consistent rule for every table in the application. */
+body .table thead th {
+  font-size: 17.5px !important;
+  line-height: 1.25 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* Every text-bearing element inside table data is 16px.
+   This removes badge/strong/small/code overrides that made cells
+   look different even when the parent td had the same size. */
+body .table tbody td,
+body .table tbody td:not(.table-actions) strong,
+body .table tbody td:not(.table-actions) b,
+body .table tbody td:not(.table-actions) span,
+body .table tbody td:not(.table-actions) div,
+body .table tbody td:not(.table-actions) p,
+body .table tbody td:not(.table-actions) small,
+body .table tbody td:not(.table-actions) code,
+body .table tbody td:not(.table-actions) a,
+body .table tbody td:not(.table-actions) label,
+body .table tbody td:not(.table-actions) .department-badge,
+body .table tbody td:not(.table-actions) .status,
+body .table tbody td:not(.table-actions) .status-active,
+body .table tbody td:not(.table-actions) .status-past,
+body .table tbody td:not(.table-actions) .badge-soft,
+body .table tbody td:not(.table-actions) .priority-high,
+body .table tbody td:not(.table-actions) .priority-medium,
+body .table tbody td:not(.table-actions) .priority-low,
+body .table tbody td:not(.table-actions) .status-start,
+body .table tbody td:not(.table-actions) .status-not-completed,
+body .table tbody td:not(.table-actions) .status-in-progress,
+body .table tbody td:not(.table-actions) .status-completed,
+body .table tbody td:not(.table-actions) .user-role {
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* Keep action controls independent from table-data typography. */
+body .table tbody td.table-actions,
+body .table tbody td.table-actions * {
+  font-size: initial !important;
+}
+
+/* Department headers: center ONLY the Department/Departments title.
+   Department cell data remains left-aligned. */
+body .table thead th.department-header {
+  text-align: center !important;
+}
+
+body .table tbody td.department-cell {
+  text-align: left !important;
+}
+
+/* Explicitly keep department data left-aligned on the existing Interns/Mentors
+   table selectors so older page-specific rules cannot center the values. */
+body .intern-row td:nth-child(3),
+body .interns-page .table tbody td:nth-child(3),
+body .mentor-row td:nth-child(5),
+body .mentors-page .table tbody td:nth-child(5) {
+  text-align: left !important;
+}
+
+/* Department/status/priority pills keep their existing shape and colors,
+   but their text follows the same 16px table-data typography. */
+body .table tbody td:not(.table-actions) .department-badge,
+body .table tbody td:not(.table-actions) .status,
+body .table tbody td:not(.table-actions) .status-active,
+body .table tbody td:not(.table-actions) .status-past,
+body .table tbody td:not(.table-actions) .badge-soft,
+body .table tbody td:not(.table-actions) .priority-high,
+body .table tbody td:not(.table-actions) .priority-medium,
+body .table tbody td:not(.table-actions) .priority-low,
+body .table tbody td:not(.table-actions) .status-start,
+body .table tbody td:not(.table-actions) .status-not-completed,
+body .table tbody td:not(.table-actions) .status-in-progress,
+body .table tbody td:not(.table-actions) .status-completed {
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 400 !important;
+}
+
+@media (max-width: 767px) {
+  body .page-heading h1 {
+    font-size: 32px !important;
+  }
+
+  body .page-heading .eyebrow,
+  body .section-title .eyebrow,
+  body .dashboard-panel .eyebrow,
+  body .card-body > .eyebrow {
+    font-size: 18px !important;
+  }
+
+  body .table thead th {
+    font-size: 17.5px !important;
+  }
+
+  body .table tbody td,
+  body .table tbody td:not(.table-actions) strong,
+  body .table tbody td:not(.table-actions) b,
+  body .table tbody td:not(.table-actions) span,
+  body .table tbody td:not(.table-actions) div,
+  body .table tbody td:not(.table-actions) p,
+  body .table tbody td:not(.table-actions) small,
+  body .table tbody td:not(.table-actions) code,
+  body .table tbody td:not(.table-actions) a,
+  body .table tbody td:not(.table-actions) label,
+  body .table tbody td:not(.table-actions) .department-badge,
+  body .table tbody td:not(.table-actions) .status,
+  body .table tbody td:not(.table-actions) .status-active,
+  body .table tbody td:not(.table-actions) .status-past,
+  body .table tbody td:not(.table-actions) .badge-soft,
+  body .table tbody td:not(.table-actions) .priority-high,
+  body .table tbody td:not(.table-actions) .priority-medium,
+  body .table tbody td:not(.table-actions) .priority-low,
+  body .table tbody td:not(.table-actions) .status-start,
+  body .table tbody td:not(.table-actions) .status-not-completed,
+  body .table tbody td:not(.table-actions) .status-in-progress,
+  body .table tbody td:not(.table-actions) .status-completed,
+  body .table tbody td:not(.table-actions) .user-role {
+    font-size: 16px !important;
+  }
+}
+
+/* =========================================================
+   UNIVERSAL TABLE SPACING FIX - ALL TABLES
+   Ensures consistent, perfectly aligned spacing across all tables
+   ========================================================= */
+
+/* Base table styles - ensure all tables have uniform spacing */
+.table thead th {
+  padding: 15px 18px !important;
+  vertical-align: middle !important;
+  height: auto !important;
+}
+
+.table tbody td {
+  padding: 15px 18px !important;
+  vertical-align: middle !important;
+  height: auto !important;
+}
+
+.table tbody tr {
+  height: auto !important;
+}
+
+/* Ensure no extra margins or padding on table elements */
+.table {
+  margin-bottom: 0 !important;
+  border-collapse: collapse !important;
+}
+
+/* Task table specific spacing */
+.table.task-table thead th,
+.table.task-table tbody td {
+  padding: 15px 18px !important;
+}
+
+/* Mentor table specific spacing */
+.table tbody td.table-actions,
+.table thead th.table-actions {
+  padding: 15px 18px !important;
+  text-align: center !important;
+}
+
+/* Department column spacing */
+.table tbody td.department-cell {
+  padding: 15px 18px !important;
+  vertical-align: middle !important;
+}
+
+/* Intern count column */
+.table tbody td.intern-count-column,
+.table thead th.intern-count-column {
+  padding: 15px 18px !important;
+  text-align: center !important;
+}
+
+/* All action buttons alignment */
+.directory-actions {
+  padding: 15px 18px !important;
+  display: flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Status and priority badges spacing */
+.status, .priority-high, .priority-medium, .priority-low,
+.status-start, .status-not-completed, .status-in-progress, .status-completed {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 9px !important;
+  margin: 0 !important;
+}
+
+/* Department badges spacing */
+.department-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 9px !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+.department-badges {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  grid-auto-rows: auto !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  justify-items: flex-start !important;
+  column-gap: 12px !important;
+  row-gap: 8px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.department-item {
+  display: flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* FINAL: Mentor Departments - exactly 2 per row with perfect table alignment.
+   Keep only the DEPARTMENTS header left-aligned on the Mentors table. */
+body .mentors-page .table thead th.department-header {
+  text-align: left !important;
+  padding: 15px 18px !important;
+}
+
+body .mentors-page .table tbody td.department-cell {
+  text-align: left !important;
+  vertical-align: middle !important;
+  padding: 15px 18px !important;
+  min-width: 400px !important;
+}
+
+body .mentors-page .table tbody td.department-cell .department-badges {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  grid-auto-rows: auto !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  justify-items: flex-start !important;
+  column-gap: 12px !important;
+  row-gap: 8px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .mentors-page .table tbody td.department-cell .department-item {
+  display: flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .mentors-page .table tbody td.department-cell .department-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 5px 9px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+}
+
+/* If there is an odd number, keep the final department left-aligned. */
+body .mentors-page .table tbody td.department-cell .department-item:last-child:nth-child(odd) {
+  grid-column: 1 !important;
+  justify-self: flex-start !important;
+  width: auto !important;
+}
+
+/* FINAL FIX: Mentors page - only the Departments table header is left aligned.
+   The mentors-page class is on the heading, not the body, so target the table
+   card that follows it. */
+body.inner-page .page-heading.mentors-page ~ .card.table-card thead th.department-header {
+  text-align: left !important;
+}
+
+/* FINAL FIX: Profile department columns - header and values must share the same left edge. */
+body.inner-page .table thead th.department-header,
+body.inner-page .table tbody td.department-cell {
+  text-align: left !important;
+}
+
+/* FINAL: Department headers on profile/view pages are left-aligned.
+   Department values remain left-aligned as well. */
+body .inner-page .table thead th.department-header,
+body .intern-profile-page .table thead th.department-header,
+body .mentor-profile-page .table thead th.department-header {
+  text-align: left !important;
+}
+
+body .inner-page .table tbody td.department-cell,
+body .intern-profile-page .table tbody td.department-cell,
+body .mentor-profile-page .table tbody td.department-cell {
+  text-align: left !important;
+}
+
+/* Add Mentor page: use the available viewport height without changing width. */
+.people-form-page {
+  height: calc(100vh - 150px) !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.people-form-page .compact-form-card {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.people-form-page .compact-form-card .card-body {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.people-form-page .compact-form-card .card-body > .row {
+  flex: 1 1 auto !important;
+  align-content: space-between !important;
+  row-gap: 0 !important;
+}
+
+@media (max-width: 991.98px) {
+  .people-form-page {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .people-form-page .compact-form-card {
+    overflow: visible !important;
+  }
+
+  .people-form-page .compact-form-card .card-body {
+    height: auto !important;
+  }
+
+  .people-form-page .compact-form-card .card-body > .row {
+    row-gap: 14px !important;
+  }
+}
+
+/* Add Mentor: keep the card filling the page while using controlled vertical spacing. */
+.people-form-page .compact-form-card .card-body > .row {
+  flex: 0 0 auto !important;
+  align-content: initial !important;
+  row-gap: 30px !important;
+}
+
+.people-form-page .compact-form-card .card-body > .row > [class*="col-"] {
+  margin-bottom: 0 !important;
+}
+
+.people-form-page .compact-form-card .card-body > .mt-4 {
+  margin-top: auto !important;
+  padding-top: 24px;
+}
+
+@media (max-width: 991.98px) {
+  .people-form-page .compact-form-card .card-body > .row {
+    row-gap: 14px !important;
+  }
+
+  .people-form-page .compact-form-card .card-body > .mt-4 {
+    margin-top: 24px !important;
+    padding-top: 0;
+  }
+}
+
+/* USER REQUEST: Mentors list only - center Departments header. */
+body .page-heading.mentors-page ~ .card.table-card thead th.department-header {
+  text-align: center !important;
+}
+
+/* FINAL OVERRIDE: Center only the DEPARTMENTS header on the Mentors directory page.
+   Department badges/data and every other table column remain unchanged. */
+body .mentors-page .table thead th.department-header {
+  text-align: center !important;
+}
+
+/* FINAL OVERRIDE - Mentors directory ONLY: center the DEPARTMENTS header. */
+body .page-heading.mentors-page ~ .card.table-card thead th.department-header {
+    text-align: center !important;
+}
+
+/* Add Intern page: keep the complete form and action buttons visible within the fixed page. */
+.intern-form-page {
+  height: calc(100vh - 150px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.intern-form-page .compact-form-card {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.intern-form-page .compact-form-card .card-body {
+  height: auto !important;
+  padding-top: 18px !important;
+  padding-bottom: 14px !important;
+}
+.intern-form-page .compact-form-card .card-body > .row {
+  flex: 0 0 auto !important;
+  align-content: initial !important;
+  row-gap: 10px !important;
+}
+.intern-form-page .compact-form-card .card-body > .row > [class*="col-"] {
+  margin-bottom: 0 !important;
+}
+.intern-form-page .compact-form-card .card-body > .mt-4 {
+  margin-top: 14px !important;
+  padding-top: 0 !important;
+}
+@media (max-width: 991.98px) {
+  .intern-form-page {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  .intern-form-page .compact-form-card .card-body > .row {
+    row-gap: 14px !important;
+  }
+}
+
+
+/* FINAL ADD INTERN VIEWPORT FIX: keep the complete form, including action buttons,
+   visible in the desktop viewport without changing its width. */
+.intern-form-page {
+  height: calc(100vh - 190px) !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+.intern-form-page .page-heading {
+  margin-bottom: 10px !important;
+}
+.intern-form-page .compact-form-card {
+  width: 100% !important;
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  overflow: visible !important;
+}
+.intern-form-page .compact-form-card .card-body {
+  padding: 14px 24px 12px !important;
+}
+.intern-form-page .compact-form-card .form-label {
+  margin-bottom: 3px !important;
+}
+.intern-form-page .compact-form-card .form-control,
+.intern-form-page .compact-form-card .form-select {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 7px 12px !important;
+}
+.intern-form-page .compact-form-card .card-body > .row {
+  row-gap: 28px !important;
+}
+.intern-form-page .compact-form-card .card-body > .mt-4 {
+  margin-top: 8px !important;
+  padding-top: 0 !important;
+}
+.intern-form-page .compact-form-card .add-person-action,
+.intern-form-page .compact-form-card .history-back-button {
+  min-height: 40px !important;
+  height: 40px !important;
+}
+@media (max-width: 991.98px) {
+  .intern-form-page {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .intern-form-page .compact-form-card .card-body > .row {
+    row-gap: 10px !important;
+  }
+}
+
+
+/* FINAL ADD INTERN SCROLL FIX: use the normal browser/page scrollbar.
+   Do not create a fixed-height or inner scrolling area on the Add Intern page. */
+.intern-form-page {
+  height: auto !important;
+  min-height: 0 !important;
+  display: block !important;
+  overflow: visible !important;
+}
+.intern-form-page .compact-form-card {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.intern-form-page .compact-form-card .card-body {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* USER REQUEST: Add clear vertical spacing between the Intern Document field and action buttons. */
+.intern-form-page .compact-form-card .card-body > .mt-4 {
+  margin-top: 24px !important;
+}
+
+/* Final Tasks page alignment: use all 9 columns so the empty space between
+   Team Member, Task Title and Deadline is distributed evenly. */
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(1),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(1) { width: 9% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(2),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(2) { width: 13% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(3),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(3) { width: 16% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(4),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(4) { width: 23% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(5),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(5) { width: 14% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(6),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(6) { width: 10% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(7),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(7) { width: 7% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(8),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(8) { width: 9% !important; }
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) thead th:nth-child(9),
+.tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) tbody td:nth-child(9) { width: 9% !important; }
+
+
+/* FINAL TASK TABLE ALIGNMENT - reference image
+   Keep the table within 100% width, tighten Task Title -> Deadline,
+   center Department header, and keep all Actions buttons visible.
+   Applied to both Admin and Mentor task views. */
+.tasks-page .allocation-table-wrap { overflow-x: hidden !important; }
+.tasks-page .allocation-table { width: 100% !important; table-layout: fixed !important; }
+.tasks-page .allocation-table th,
+.tasks-page .allocation-table td { box-sizing: border-box !important; }
+.tasks-page .allocation-table th.department-header { text-align: center !important; }
+.tasks-page .allocation-table td.department-cell { text-align: left !important; }
+.tasks-page .allocation-table th,
+.tasks-page .allocation-table td { padding-left: 10px !important; padding-right: 10px !important; }
+.tasks-page .allocation-table td.task-actions { white-space: nowrap !important; text-align: center !important; padding-left: 6px !important; padding-right: 6px !important; }
+.tasks-page .allocation-table td.task-actions .btn { width: 40px !important; height: 40px !important; margin: 0 3px !important; padding: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 9% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 15% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 14% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 14% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 10% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 8% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 9% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9), .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 10% !important; }
+
+/* Mentor login/task view: same balanced geometry. */
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(1), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 9% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(2), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 13% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(3), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 11% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(4), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 15% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(5), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 13% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(6), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(7), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 8% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(8), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 9% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(9), .tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 12% !important; }
+
+.tasks-page .allocation-table .department-header { text-align: center !important; }
+
+/* FINAL OVERRIDE - compact balanced task columns */
+.tasks-page .allocation-table-wrap {
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+.tasks-page .allocation-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 11.11% !important; }
+
+/* Mentor task view: retain the same compact geometry and enough room for actions. */
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 9% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 13% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 11% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 15% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 12% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 9% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 8% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 9% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 14% !important; }
+
+.tasks-page .allocation-table th.department-header { text-align: center !important; }
+.tasks-page .allocation-table th,
+.tasks-page .allocation-table td { box-sizing: border-box !important; }
+.tasks-page .allocation-table td.task-actions {
+  white-space: nowrap !important;
+  text-align: center !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+.tasks-page .allocation-table td.task-actions .btn {
+  width: 36px !important;
+  height: 36px !important;
+  margin: 0 2px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.tasks-page .allocation-table td:nth-child(5) .overdue-label {
+  display: block !important;
+}
+
+
+/* EXACT TASK TABLE REFERENCE LAYOUT
+   Match the approved reference image: tighter Task Title -> Deadline,
+   centered Department, evenly distributed columns, and fully visible Actions. */
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 17% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 11% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 10% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 13% !important; text-align: center !important; }
+
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.department-cell,
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.task-actions {
+  white-space: nowrap !important;
+  text-align: center !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.task-actions .btn {
+  width: 36px !important;
+  height: 36px !important;
+  margin: 0 5px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) .overdue-label {
+  display: block !important;
+}
+
+/* Keep the mentor task table aligned with the same visual language. */
+.tasks-page .allocation-table.mentor-allocation-table th.department-header,
+.tasks-page .allocation-table.mentor-allocation-table td.department-cell { text-align: center !important; }
+
+
+/* FINAL REFERENCE MATCH — task tables
+   Rebalance the columns to match the supplied reference image.
+   Keep Department centered, bring Team Member/Task Title toward the left,
+   tighten Task Title -> Deadline, and reserve enough room for all Actions. */
+.tasks-page .allocation-table-wrap {
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+.tasks-page .allocation-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+}
+.tasks-page .allocation-table th,
+.tasks-page .allocation-table td {
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  vertical-align: middle !important;
+}
+
+/* Main/Admin task table: exact compact proportions. */
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2) { width: 11.11% !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) { width: 16.5% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4) { width: 11% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) { width: 10% !important; text-align: left !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9) { width: 14% !important; text-align: center !important; }
+
+.tasks-page .allocation-table:not(.mentor-allocation-table) th.department-header,
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.department-cell,
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3) {
+  text-align: center !important;
+}
+
+/* Keep title/deadline/status compact and visually aligned. */
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) {
+  padding-left: 8px !important;
+  padding-right: 6px !important;
+  white-space: normal !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5) .overdue-label {
+  display: block !important;
+  white-space: nowrap !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7),
+.tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8) {
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+}
+
+/* Actions: all three buttons stay completely inside the cell. */
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.task-actions {
+  padding: 0 4px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  overflow: visible !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.task-actions .btn {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 2px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+}
+.tasks-page .allocation-table:not(.mentor-allocation-table) td.task-actions form {
+  display: inline-block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+}
+
+/* Mentor task table: preserve the same compact visual balance. */
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 9% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 13% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 11% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 16.5% !important; text-align: center !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 10% !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 9% !important; text-align: center !important; }
+.tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 13.5% !important; text-align: center !important; }
+.tasks-page .allocation-table.mentor-allocation-table th.department-header,
+.tasks-page .allocation-table.mentor-allocation-table td.department-cell,
+.tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) {
+  text-align: center !important;
+}
+.tasks-page .allocation-table.mentor-allocation-table td.task-actions {
+  padding: 0 4px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  overflow: visible !important;
+}
+.tasks-page .allocation-table.mentor-allocation-table td.task-actions .btn {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 2px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Fit the task grid to the page and follow the supplied reference proportions. */
+body .tasks-page .allocation-table-wrap { width: 100% !important; overflow-x: hidden !important; }
+body .tasks-page .allocation-table { width: 100% !important; min-width: 0 !important; table-layout: fixed !important; }
+body .tasks-page .allocation-table th:nth-child(n),
+body .tasks-page .allocation-table td:nth-child(n) {
+  box-sizing: border-box !important;
+  padding: 14px 10px !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+body .tasks-page .allocation-table td:nth-child(1),
+body .tasks-page .allocation-table td:nth-child(2),
+body .tasks-page .allocation-table td:nth-child(5) { text-align: left !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(1),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(1),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(1) { width: 9% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(2),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(2),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(2) { width: 12% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(3),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(3),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(3) { width: 14% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(4),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(4),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(4) { width: 11.5% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(5),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(5),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(5) { width: 10.5% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(6),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(6),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10.5% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(7),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(7),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(7) { width: 10% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(8),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(8),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(8) { width: 10.5% !important; }
+body .tasks-page .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+body .tasks-page .allocation-table:not(.mentor-allocation-table) td:nth-child(9),
+body .tasks-page .allocation-table.mentor-allocation-table th:nth-child(9),
+body .tasks-page .allocation-table.mentor-allocation-table td:nth-child(9) { width: 12% !important; }
+body .tasks-page .allocation-table td.task-actions {
+  padding: 8px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+body .tasks-page .allocation-table td.task-actions > a,
+body .tasks-page .allocation-table td.task-actions > form {
+  display: inline-flex !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
+/* Match Mentors: 46 by 42 px controls, with the same icon size. */
+body .tasks-page .allocation-table td.task-actions .btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body .tasks-page .allocation-table td.task-actions .btn i { font-size: 22px !important; line-height: 1 !important; }
+body .tasks-page .allocation-table td:nth-child(5) .overdue-label { display: block !important; }
+/* Final task-grid overrides: include the wrapper selector to beat legacy widths. */
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(1),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(1),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(1),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(1) { width: 9% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(2),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(2),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(2),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(2) { width: 12% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(3),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(3),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(3),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(3) { width: 14% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(4),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(4),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(4),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(4) { width: 11.5% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(5),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(5),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(5),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(5) { width: 10.5% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(6),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(6),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(6),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10.5% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(7),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(7),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(7),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(7) { width: 10% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(8),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(8),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(8),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(8) { width: 10.5% !important; }
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) th:nth-child(9),
+body .tasks-page .allocation-table-wrap .allocation-table:not(.mentor-allocation-table) td:nth-child(9),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(9),
+body .tasks-page .allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(9) { width: 12% !important; }
+
+/* Keep Actions a real table cell so all three Mentor-sized controls center vertically. */
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions {
+  display: table-cell !important;
+  padding: 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form {
+  display: inline-flex !important;
+  margin: 0 3px !important;
+  vertical-align: middle !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+/* Align the identifying task fields to the left; give the title column a touch more inset. */
+body .tasks-page .allocation-table-wrap .allocation-table th:nth-child(1),
+body .tasks-page .allocation-table-wrap .allocation-table td:nth-child(1),
+body .tasks-page .allocation-table-wrap .allocation-table th:nth-child(2),
+body .tasks-page .allocation-table-wrap .allocation-table td:nth-child(2) { text-align: left !important; }
+body .tasks-page .allocation-table-wrap .allocation-table th:nth-child(5),
+body .tasks-page .allocation-table-wrap .allocation-table td:nth-child(5) {
+  text-align: left !important;
+  padding-left: 22px !important;
+}
+/* Tasks: normalize every textual value and badge to the same 15px size. */
+body .tasks-page .allocation-table tbody td,
+body .tasks-page .allocation-table tbody td :not(i):not(svg) {
+  font-size: 15px !important;
+}
+/* Task action icons: match the supplied light square buttons and generous gaps. */
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions {
+  padding: 0 !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form {
+  display: inline-flex !important;
+  margin: 0 7px !important;
+  vertical-align: middle !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn {
+  width: 56px !important;
+  min-width: 56px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: #f7f8fa !important;
+  color: #17212b !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn i {
+  color: #17212b !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+@media (max-width: 1399.98px) {
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form { margin: 0 4px !important; }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn {
+    width: 42px !important; min-width: 42px !important; height: 42px !important; min-height: 42px !important;
+  }
+}
+@media (max-width: 1199.98px) {
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form { margin: 0 3px !important; }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn {
+    width: 32px !important; min-width: 32px !important; height: 36px !important; min-height: 36px !important;
+  }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn i { font-size: 18px !important; }
+}
+/* Match task actions to the Mentors table controls and center them in the cell. */
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions {
+  display: table-cell !important;
+  padding: 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form {
+  display: inline-flex !important;
+  margin: 0 3px !important;
+  vertical-align: middle !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 9px !important;
+  background: #f7f8fa !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .btn i {
+  font-size: 22px !important;
+  line-height: 1 !important;
+}
+/* Match the wider visual separation in the Mentors action group. */
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form { margin: 0 7px !important; }
+@media (max-width: 1399.98px) {
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form { margin: 0 4px !important; }
+}
+@media (max-width: 1199.98px) {
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > a,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions > form { margin: 0 2px !important; }
+}
+/* Use a dedicated flex group so task action spacing is consistent in every row. */
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions {
+  display: table-cell !important;
+  padding: 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons > a,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons > form {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 9px !important;
+  background: #f7f8fa !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+@media (max-width: 1399.98px) {
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons { gap: 8px !important; }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .btn { width: 42px !important; min-width: 42px !important; height: 42px !important; min-height: 42px !important; }
+}
+@media (max-width: 1199.98px) {
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons { gap: 4px !important; }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .btn { width: 32px !important; min-width: 32px !important; height: 36px !important; min-height: 36px !important; }
+}
+/* Interns and Tasks tables share one 15px data size, including badges and labels. */
+body .consistent-data-table tbody td,
+body .consistent-data-table tbody td :not(i):not(svg) { font-size: 15px !important; }
+/* Keep all table body data consistent across every page. */
+body table tbody td,
+body table tbody td :not(i):not(svg) { font-size: 15px !important; }
+/* Shared action dimensions for Tasks and Mentors, including their Delete buttons. */
+body .directory-actions .btn,
+body .tasks-page .allocation-table-wrap .allocation-table .task-action-buttons .btn {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  border-radius: 9px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+@media (max-width: 1399.98px) {
+  body .directory-actions .btn,
+  body .tasks-page .allocation-table-wrap .allocation-table .task-action-buttons .btn {
+    width: 42px !important; min-width: 42px !important; height: 42px !important; min-height: 42px !important;
+  }
+}
+@media (max-width: 1199.98px) {
+  body .directory-actions .btn,
+  body .tasks-page .allocation-table-wrap .allocation-table .task-action-buttons .btn {
+    width: 32px !important; min-width: 32px !important; height: 36px !important; min-height: 36px !important;
+  }
+}
+/* One shared action-button component for Mentors and Tasks. */
+body .table .directory-actions .shared-action-button,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .shared-action-button {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: #f7f8fa !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body .table .directory-actions .shared-action-button i,
+body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .shared-action-button i {
+  font-size: 22px !important;
+  line-height: 1 !important;
+}
+@media (max-width: 1399.98px) {
+  body .table .directory-actions .shared-action-button,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .shared-action-button {
+    width: 42px !important; min-width: 42px !important; height: 42px !important; min-height: 42px !important;
+  }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons { gap: 12px !important; }
+}
+@media (max-width: 1199.98px) {
+  body .table .directory-actions .shared-action-button,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .shared-action-button {
+    width: 32px !important; min-width: 32px !important; height: 36px !important; min-height: 36px !important;
+  }
+  body .table .directory-actions .shared-action-button i,
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons .shared-action-button i { font-size: 18px !important; }
+  body .tasks-page .allocation-table-wrap .allocation-table td.task-actions .task-action-buttons { gap: 12px !important; }
+}
+/* Project-wide table row actions share one button size, icon size, and surface. */
+body .table td.table-actions .btn,
+body .table td.directory-actions .btn,
+body .table td.text-end .btn,
+body .user-action-buttons .user-action-icon {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: #f7f8fa !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body .table td.table-actions .btn i,
+body .table td.directory-actions .btn i,
+body .table td.text-end .btn i,
+body .user-action-buttons .user-action-icon i {
+  font-size: 22px !important;
+  line-height: 1 !important;
+}
+body .table td.directory-actions { gap: 12px !important; }
+body .table td.directory-actions > a,
+body .table td.directory-actions > form { margin-right: 0 !important; }
+body .table .report-actions,
+body .table .user-action-buttons,
+body .table .table-actions.task-actions { gap: 12px !important; }
+@media (max-width: 1399.98px) {
+  body .table td.table-actions .btn,
+  body .table td.directory-actions .btn,
+  body .table td.text-end .btn,
+  body .user-action-buttons .user-action-icon {
+    width: 42px !important; min-width: 42px !important; height: 42px !important; min-height: 42px !important;
+  }
+}
+@media (max-width: 1199.98px) {
+  body .table td.table-actions .btn,
+  body .table td.directory-actions .btn,
+  body .table td.text-end .btn,
+  body .user-action-buttons .user-action-icon {
+    width: 32px !important; min-width: 32px !important; height: 36px !important; min-height: 36px !important;
+  }
+  body .table td.table-actions .btn i,
+  body .table td.directory-actions .btn i,
+  body .table td.text-end .btn i,
+  body .user-action-buttons .user-action-icon i { font-size: 18px !important; }
+}
+
+/* Keep the mentor dashboard allocation tables inside their own columns. */
+.allocation-table-wrap .allocation-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+.allocation-table-wrap .allocation-table thead th,
+.allocation-table-wrap .allocation-table tbody td {
+  box-sizing: border-box;
+  vertical-align: middle !important;
+  text-align: left !important;
+}
+.allocation-table-wrap .allocation-table th:last-child,
+.allocation-table-wrap .allocation-table td:last-child {
+  text-align: center !important;
+}
+.allocation-table-wrap .allocation-table tbody td {
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.allocation-table-wrap .allocation-table tbody td .department-badge {
+  display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+.allocation-table-wrap .allocation-table tbody td strong {
+  display: inline-block;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Admin allocation table: 8 columns. */
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(1),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(1) { width: 9% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(2),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(2) { width: 14% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(3),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(3) { width: 18% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(4),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(4) { width: 20% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(5),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(5) { width: 11% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(6),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(6) { width: 9% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(7),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(7) { width: 10% !important; }
+.allocation-table-wrap .allocation-table.admin-allocation-table th:nth-child(8),
+.allocation-table-wrap .allocation-table.admin-allocation-table td:nth-child(8) { width: 9% !important; }
+
+/* Mentor-created subtasks: 8 columns after removing Priority. */
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(1),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(1) { width: 11% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(2),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(2) { width: 14% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(3),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(3) { width: 12% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(4),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(4) { width: 18% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(5),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(5) { width: 17% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(6),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(6) { width: 10% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(7),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(7) { width: 9% !important; }
+.allocation-table-wrap .allocation-table.mentor-allocation-table th:nth-child(8),
+.allocation-table-wrap .allocation-table.mentor-allocation-table td:nth-child(8) { width: 9% !important; }
+
+@media (max-width: 991.98px) {
+  .allocation-table-wrap { overflow-x: auto !important; }
+  .allocation-table-wrap .allocation-table { min-width: 900px !important; }
+}
+
+/* Keep every filter-clear X button within its grid column. The global regular
+   button minimum width was forcing the compact Mentor filter button outside. */
+body .btn:not(.btn-sm):not(.icon-action):not(.notification-button).filter-clear-button {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 12px !important;
+  box-sizing: border-box !important;
+  flex: 1 1 auto !important;
+}
+body .mentor-filter-row .btn:not(.btn-sm):not(.icon-action):not(.notification-button).filter-clear-button {
+  height: 42px !important;
+  min-height: 42px !important;
 }

@@ -194,6 +194,64 @@ def _read_settings() -> FirebaseSettings:
     )
 
 
+def _parse_credentials_payload(raw: str) -> dict:
+    """Turn a service-account key supplied as an environment variable into a dict.
+
+    Environment variables reach the process in several damaged shapes depending
+    on the host: quotes around the value, surrounding whitespace, newlines
+    stripped out, a ``data:...;base64,`` prefix, unpadded base64, or URL-safe
+    base64.  All of those are accepted here so one imperfect copy/paste does not
+    take the whole site down.  The error messages name the value's length, which
+    is the fastest way to spot a truncated key.
+    """
+    import base64
+    import binascii
+
+    payload = raw.strip().strip('"').strip("'").strip()
+    if payload.startswith("data:") and "," in payload:
+        payload = payload.split(",", 1)[1]
+
+    # 1. Plain JSON, optionally with escaped newlines (private_key "\n").
+    for candidate in (payload, payload.replace("\\n", "\n")):
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+
+    # 2. base64 or base64url, re-padded to a multiple of four.
+    compact = "".join(payload.split()).replace("-", "+").replace("_", "/")
+    compact += "=" * (-len(compact) % 4)
+    try:
+        decoded = base64.b64decode(compact, validate=False)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError(
+            f"value is {len(payload)} characters and is neither JSON nor valid base64 ({exc})"
+        ) from exc
+
+    try:
+        parsed = json.loads(decoded.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(
+            f"value is {len(payload)} characters, decodes to {len(decoded)} bytes, "
+            "but is not valid JSON - the key is most likely truncated or altered "
+            f"({exc})"
+        ) from exc
+
+    if not isinstance(parsed, dict):
+        raise ValueError("decoded value is not a JSON object")
+
+    missing = [
+        field
+        for field in ("type", "project_id", "private_key", "client_email")
+        if not parsed.get(field)
+    ]
+    if missing:
+        raise ValueError("decoded JSON is missing field(s): " + ", ".join(missing))
+    return parsed
+
+
 def init_firebase() -> None:
     """Initialise the Firebase Admin SDK exactly once. Raises FirebaseConfigError."""
     global _app, _settings
@@ -245,15 +303,11 @@ def init_firebase() -> None:
             )
             try:
                 if raw_credentials:
-                    # Support raw JSON or base64-encoded JSON (single-line friendly).
-                    payload = raw_credentials
-                    try:
-                        parsed = json.loads(payload)
-                    except json.JSONDecodeError:
-                        import base64
-
-                        parsed = json.loads(base64.b64decode(payload).decode("utf-8"))
-                    credential = fb_credentials.Certificate(parsed)
+                    # Support raw JSON or base64-encoded JSON (single-line friendly),
+                    # tolerating quotes, whitespace, missing padding and base64url.
+                    credential = fb_credentials.Certificate(
+                        _parse_credentials_payload(raw_credentials)
+                    )
                 else:
                     credential = fb_credentials.Certificate(str(_credentials_path(credentials_file)))
                 _app = initialize_app(credential, options=options)

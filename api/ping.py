@@ -1,4 +1,4 @@
-﻿"""Minimal runtime probe:  GET /api/ping  ->  "pong"."""
+"""Minimal runtime probe:  GET /api/ping  ->  "pong"."""
 
 def app(environ, start_response):
     body = b"pong"

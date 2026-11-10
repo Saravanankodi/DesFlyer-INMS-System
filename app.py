@@ -1,5 +1,6 @@
 import calendar
-import json
+import mimetypes
+import os
 import re
 import zipfile
 from io import BytesIO
@@ -11,24 +12,32 @@ from xml.sax.saxutils import escape
 
 from flask import Flask, flash, redirect, render_template, request, send_file, session, url_for
 from werkzeug.utils import secure_filename
-import hashlib
-import secrets
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+# --- Firebase backend services (centralised, separate from the UI) ---------
+import firebase_auth_service
+import storage_service
+from data_store import load_json, save_json
+from firebase_auth_service import AccountAlreadyExistsError, AccountNotProvisionedError, AuthUnavailableError
+from firebase_config import FirebaseConfigError, init_firebase
+
+# This application is Firebase-only: it refuses to start when Firebase is not
+# configured, instead of silently running without a real backend.
+try:
+    init_firebase()
+except FirebaseConfigError as exc:
+    raise SystemExit(f"\n[INMS] Firebase configuration error:\n{exc}\n")
+
 app = Flask(__name__)
-app.secret_key = "internship-tracker-development-key-change-me"
+# Session signing key. Set FLASK_SECRET_KEY in .env for production deployments.
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "internship-tracker-development-key-change-me")
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOADS_DIR = BASE_DIR / "uploads"
-DOC_UPLOAD_DIR = UPLOADS_DIR / "documents"
-PROJECT_UPLOAD_DIR = UPLOADS_DIR / "projects"
-INTERN_FILES_DIR = UPLOADS_DIR / "intern_files"
-UPLOADS_DIR.mkdir(exist_ok=True)
-DOC_UPLOAD_DIR.mkdir(exist_ok=True)
-PROJECT_UPLOAD_DIR.mkdir(exist_ok=True)
-INTERN_FILES_DIR.mkdir(exist_ok=True)
+# NOTE: these legacy JSON filenames are only used as stable KEYS for the
+# Firestore collections (see data_store.COLLECTION_BY_FILE). The application
+# never reads or writes these files at runtime - all data lives in Firestore.
 INTERNS_FILE = BASE_DIR / "interns.json"
 TASKS_FILE = BASE_DIR / "tasks.json"
 MENTORS_FILE = BASE_DIR / "mentors.json"
@@ -105,21 +114,6 @@ def calculate_end_date(joining_date, duration_months):
 
 def calculate_intern_status(end_date):
     return "Active Intern" if date.today().isoformat() <= end_date else "Past Employee"
-
-
-def load_json(path):
-    if not path.exists():
-        path.write_text("[]", encoding="utf-8")
-        return []
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-        return value if isinstance(value, list) else []
-    except (json.JSONDecodeError, OSError):
-        return []
-
-
-def save_json(path, value):
-    path.write_text(json.dumps(value, indent=2), encoding="utf-8")
 
 
 def next_profile_id(prefix, records):
@@ -291,37 +285,31 @@ def available_departments(interns=None, mentors=None):
     return list(dict.fromkeys(DEFAULT_DEPARTMENTS))
 
 
-def save_upload(file_storage, folder, prefix):
+def save_upload(file_storage, kind, prefix):
+    """Upload a file to Firebase Storage and return {"filename", "stored_name"}.
+
+    ``kind`` selects the bucket folder and the validation policy:
+    "documents", "projects" or "intern_files". Returns None when no usable
+    file was submitted (same contract as the old local-disk helper).
+    Raises storage_service.FileNotAllowedError when the server-side type or
+    size policy rejects the file.
+    """
     if not file_storage or not file_storage.filename:
         return None
-    filename = secure_filename(file_storage.filename)
-    if not filename:
-        return None
-    stored_name = f"{prefix}_{uuid4().hex[:12]}_{filename}"
-    destination = folder / stored_name
-    file_storage.save(destination)
-    return {"filename": filename, "stored_name": stored_name}
+    return storage_service.save(file_storage, kind, prefix)
 
 
-def document_path(record):
+def stored_file_response(kind, record, as_attachment=True, download_name=None):
+    """Flask response for an object in Firebase Storage, or None when unavailable."""
     if not record or not record.get("stored_name"):
         return None
-    path = DOC_UPLOAD_DIR / record["stored_name"]
-    return path if path.exists() else None
-
-
-def project_path(record):
-    if not record or not record.get("stored_name"):
+    data = storage_service.read(kind, record["stored_name"])
+    if data is None:
         return None
-    path = PROJECT_UPLOAD_DIR / record["stored_name"]
-    return path if path.exists() else None
-
-
-def intern_file_path(record):
-    if not record or not record.get("stored_name"):
-        return None
-    path = INTERN_FILES_DIR / record["stored_name"]
-    return path if path.exists() else None
+    name = download_name or record.get("filename") or Path(record["stored_name"]).name
+    mimetype = mimetypes.guess_type(name)[0] or "application/octet-stream"
+    return send_file(BytesIO(data), as_attachment=as_attachment,
+                     download_name=name, mimetype=mimetype)
 
 
 def task_intern_files(task, tasks, interns, user=None):
@@ -530,23 +518,6 @@ def decorate_tasks(tasks, interns):
     return decorated
 
 
-def check_password(stored, password):
-    try:
-        algorithm, salt, expected = stored.split("$", 2)
-        if algorithm != "pbkdf2_sha256":
-            return False
-        actual = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120000).hex()
-        return actual == expected
-    except ValueError:
-        return False
-
-
-def hash_password(password):
-    salt = secrets.token_hex(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120000).hex()
-    return f"pbkdf2_sha256${salt}${digest}"
-
-
 def find_user(identifier, users):
     identifier = identifier.strip().casefold()
     return next((u for u in users
@@ -629,7 +600,22 @@ def login():
         users = load_json(USERS_FILE)
         user = find_user(identifier, users)
 
-        if user and user.get("role", "").casefold() == selected_role and check_password(user.get("password", ""), password):
+        # The role must match the selected login role before the password is
+        # sent to Firebase Authentication (same check order as before).
+        password_ok = False
+        if user and user.get("role", "").casefold() == selected_role:
+            try:
+                password_ok = firebase_auth_service.verify_password(user, password)
+            except AccountNotProvisionedError:
+                flash("This account does not exist in Firebase Authentication yet. "
+                      "Run  python migrate_to_firebase.py  to provision it "
+                      "(see FIREBASE_SETUP.md, section 10).", "danger")
+                return render_template("login.html")
+            except AuthUnavailableError:
+                flash("Authentication service is temporarily unavailable. Please try again.", "danger")
+                return render_template("login.html")
+
+        if password_ok:
                 session.clear()
                 session["user"] = {
                     k: user[k]
@@ -670,15 +656,30 @@ def user_management():
             flash("Select a valid intern profile.", "danger")
         else:
             new_user = {"id": uuid4().hex[:10], "username": username, "email": email,
-                        "password": hash_password(password), "role": role}
+                        "role": role}
             if role == "mentor":
                 new_user["mentor_id"] = profile_id
             elif role == "intern":
                 new_user["intern_id"] = profile_id
-            users.append(new_user)
-            save_json(USERS_FILE, users)
-            flash("Login account created successfully.", "success")
-            return redirect(url_for("user_management"))
+            # Create the real account in Firebase Authentication (passwords are
+            # never stored in Firestore).
+            try:
+                new_user["uid"] = firebase_auth_service.create_account(
+                    new_user["id"], username, email, password, role, profile_id)
+            except AccountAlreadyExistsError:
+                flash("Username or email is already in use.", "danger")
+            except AuthUnavailableError as exc:
+                flash(str(exc), "danger")
+            else:
+                users.append(new_user)
+                try:
+                    save_json(USERS_FILE, users)
+                except Exception:
+                    # Do not leave a half-created Firebase account behind.
+                    firebase_auth_service.delete_account(new_user.get("uid"))
+                    raise
+                flash("Login account created successfully.", "success")
+                return redirect(url_for("user_management"))
     rows = []
     for user in users:
         rows.append({**user, "profile": profile_name(user, interns, mentors)})
@@ -716,22 +717,38 @@ def edit_user(user_id):
         elif role == "intern" and not any(i.get("id") == profile_id for i in interns):
             flash("Select a valid intern profile.", "danger")
         else:
-            user["username"] = username
-            user["email"] = email
-            user["role"] = role
-            user.pop("mentor_id", None)
-            user.pop("intern_id", None)
-            if role == "mentor":
-                user["mentor_id"] = profile_id
-            elif role == "intern":
-                user["intern_id"] = profile_id
-            if password:
-                user["password"] = hash_password(password)
-            save_json(USERS_FILE, users)
-            if current_user().get("id") == user_id: # type: ignore
-                session["user"] = {k: user[k] for k in ("id", "username", "email", "role", "mentor_id", "intern_id") if k in user}
-            flash("User account updated.", "success")
-            return redirect(url_for("user_management"))
+            # Push the changes to Firebase Authentication first; the Firestore
+            # record and the session are only updated after that succeeds.
+            try:
+                if user.get("uid"):
+                    firebase_auth_service.update_account(
+                        user["uid"], username=username, email=email,
+                        password=password or None, role=role,
+                        profile_id=profile_id, account_id=user_id)
+                else:
+                    # First edit of an account created before the migration:
+                    # provision it in Firebase Authentication now.
+                    user["uid"] = firebase_auth_service.create_account(
+                        user_id, username, email, password, role, profile_id)
+            except AccountAlreadyExistsError:
+                flash("Username or email is already in use.", "danger")
+            except AuthUnavailableError as exc:
+                flash(str(exc), "danger")
+            else:
+                user["username"] = username
+                user["email"] = email
+                user["role"] = role
+                user.pop("mentor_id", None)
+                user.pop("intern_id", None)
+                if role == "mentor":
+                    user["mentor_id"] = profile_id
+                elif role == "intern":
+                    user["intern_id"] = profile_id
+                save_json(USERS_FILE, users)
+                if current_user().get("id") == user_id: # type: ignore
+                    session["user"] = {k: user[k] for k in ("id", "username", "email", "role", "mentor_id", "intern_id") if k in user}
+                flash("User account updated.", "success")
+                return redirect(url_for("user_management"))
     return render_template("edit_user.html", user=user, interns=interns, mentors=mentors)
 
 
@@ -746,8 +763,17 @@ def delete_user(user_id):
     elif not any(u.get("id") == user_id for u in users):
         flash("User account not found.", "danger")
     else:
-        save_json(USERS_FILE, [u for u in users if u.get("id") != user_id])
-        flash("User account deleted.", "success")
+        target = next((u for u in users if u.get("id") == user_id), None)
+        # Delete the Firebase Authentication account first; if that fails the
+        # user record stays intact and the admin sees the error message.
+        try:
+            firebase_auth_service.delete_account(
+                firebase_auth_service.resolve_uid(target or {}))
+        except AuthUnavailableError as exc:
+            flash(str(exc), "danger")
+        else:
+            save_json(USERS_FILE, [u for u in users if u.get("id") != user_id])
+            flash("User account deleted.", "success")
     return redirect(url_for("user_management"))
 
 
@@ -990,7 +1016,12 @@ def add_intern():
         }
         intern["id"] = next_profile_id("DFIN", interns)
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
-        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "intern")
+        try:
+            uploaded = save_upload(request.files.get("document"), "documents", "intern")
+        except storage_service.FileNotAllowedError as exc:
+            flash(str(exc), "danger")
+            return render_template("add_intern.html", intern=None, next_intern_id=next_profile_id("DFIN", interns),
+                                   mentors=mentors, departments=available_departments(interns, mentors))
         if uploaded:
             intern["document"] = uploaded
         try:
@@ -1077,7 +1108,12 @@ def add_mentor():
             "departments": selected_departments,
             "department": selected_departments[0] if selected_departments else "",
         }
-        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "mentor")
+        try:
+            uploaded = save_upload(request.files.get("document"), "documents", "mentor")
+        except storage_service.FileNotAllowedError as exc:
+            flash(str(exc), "danger")
+            return render_template("add_mentor.html", mentor=None, next_mentor_id=next_profile_id("DFM", mentors),
+                                   departments=available_departments(interns, mentors))
         if uploaded:
             mentor["document"] = uploaded
         if not mentor["name"] or not mentor["email"] or not mentor["phone"] or not mentor["departments"]:
@@ -1110,7 +1146,11 @@ def edit_mentor(mentor_id):
         selected_departments = list(dict.fromkeys(d.strip() for d in request.form.getlist("departments") if d.strip()))
         mentor["departments"] = selected_departments
         mentor["department"] = selected_departments[0] if selected_departments else ""
-        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "mentor")
+        try:
+            uploaded = save_upload(request.files.get("document"), "documents", "mentor")
+        except storage_service.FileNotAllowedError as exc:
+            flash(str(exc), "danger")
+            return render_template("add_mentor.html", mentor=mentor, departments=available_departments(interns, mentors))
         if uploaded:
             mentor["document"] = uploaded
         if not mentor.get("name") or not mentor.get("email") or not mentor.get("phone") or not mentor.get("departments"):
@@ -1162,11 +1202,11 @@ def download_document(kind, item_id):
     if not record or not allowed:
         flash("You do not have permission to download this document.", "danger")
         return redirect(url_for("home"))
-    path = document_path(record.get("document"))
-    if not path:
+    response = stored_file_response("documents", record.get("document"), as_attachment=True)
+    if response is None:
         flash("No document is available for this person.", "warning")
         return redirect(url_for("home"))
-    return send_file(path, as_attachment=True, download_name=record["document"].get("filename", path.name))
+    return response
 
 
 
@@ -1197,7 +1237,11 @@ def edit_intern(intern_id):
         intern["end_date"] = end_date
         intern["employment_status"] = calculate_intern_status(end_date)
         intern["assigned_mentor"] = request.form.get("assigned_mentor", "").strip()
-        uploaded = save_upload(request.files.get("document"), DOC_UPLOAD_DIR, "intern")
+        try:
+            uploaded = save_upload(request.files.get("document"), "documents", "intern")
+        except storage_service.FileNotAllowedError as exc:
+            flash(str(exc), "danger")
+            return render_template("add_intern.html", intern=intern, mentors=mentors, departments=available_departments(interns, mentors))
         if uploaded:
             intern["document"] = uploaded
         save_json(INTERNS_FILE, interns)
@@ -1900,7 +1944,11 @@ def upload_intern_file(task_id):
         flash("Task not found or access denied.", "danger")
         return redirect(url_for("intern_dashboard"))
     file_storage = request.files.get("mentor_file")
-    uploaded: dict[str, Any] = save_upload(file_storage, INTERN_FILES_DIR, f"{task_id}_{user.get('intern_id', 'intern')}") or {}
+    try:
+        uploaded: dict[str, Any] = save_upload(file_storage, "intern_files", f"{task_id}_{user.get('intern_id', 'intern')}") or {}
+    except storage_service.FileNotAllowedError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("view_task", task_id=task_id))
     if not uploaded:
         flash("Choose a file to upload.", "danger")
         return redirect(url_for("view_task", task_id=task_id))
@@ -1942,11 +1990,11 @@ def preview_intern_file(task_id, file_id):
     if not record:
         flash("File not found.", "danger")
         return redirect(request.referrer or url_for("home"))
-    path = intern_file_path(record)
-    if not path:
+    response = stored_file_response("intern_files", record, as_attachment=False)
+    if response is None:
         flash("The uploaded file is no longer available.", "danger")
         return redirect(request.referrer or url_for("home"))
-    return send_file(path, as_attachment=False, download_name=record.get("filename", path.name))
+    return response
 
 
 @app.get("/mentor/tasks/<task_id>/files/<file_id>/download")
@@ -1971,11 +2019,11 @@ def download_intern_file(task_id, file_id):
     if not record:
         flash("File not found.", "danger")
         return redirect(request.referrer or url_for("home"))
-    path = intern_file_path(record)
-    if not path:
+    response = stored_file_response("intern_files", record, as_attachment=True)
+    if response is None:
         flash("The uploaded file is no longer available.", "danger")
         return redirect(request.referrer or url_for("home"))
-    return send_file(path, as_attachment=True, download_name=record.get("filename", path.name))
+    return response
 
 
 @app.get("/admin/tasks/<task_id>/files/<file_id>/download")
@@ -1990,11 +2038,11 @@ def admin_download_intern_file(task_id, file_id):
     if not parent or not record or not record.get("sent_to_admin"):
         flash("File not found.", "danger")
         return redirect(url_for("dashboard"))
-    path = intern_file_path(record)
-    if not path:
+    response = stored_file_response("intern_files", record, as_attachment=True)
+    if response is None:
         flash("The uploaded file is no longer available.", "danger")
         return redirect(url_for("dashboard"))
-    return send_file(path, as_attachment=True, download_name=record.get("filename", path.name))
+    return response
 
 
 @app.get("/admin/tasks/<task_id>/files/<file_id>/preview")
@@ -2009,11 +2057,11 @@ def admin_preview_intern_file(task_id, file_id):
     if not parent or not record or not record.get("sent_to_admin"):
         flash("File not found.", "danger")
         return redirect(url_for("dashboard"))
-    path = intern_file_path(record)
-    if not path:
+    response = stored_file_response("intern_files", record, as_attachment=False)
+    if response is None:
         flash("The uploaded file is no longer available.", "danger")
         return redirect(url_for("dashboard"))
-    return send_file(path, as_attachment=False, download_name=record.get("filename", path.name))
+    return response
 
 
 @app.post("/mentor/tasks/<task_id>/files/<file_id>/delete")
@@ -2035,9 +2083,7 @@ def delete_intern_file(task_id, file_id):
     if not record:
         flash("File not found.", "danger")
         return redirect(url_for("mentor_dashboard"))
-    path = intern_file_path(record)
-    if path:
-        path.unlink(missing_ok=True)
+    storage_service.delete("intern_files", record.get("stored_name"))
     task["intern_files"] = [item for item in files if item.get("id") != file_id]
     save_json(TASKS_FILE, tasks)
     flash(f"{record.get('filename', 'File')} deleted successfully.", "success")
@@ -2057,9 +2103,7 @@ def admin_delete_intern_file(task_id, file_id):
     if not parent or not record or not record.get("sent_to_admin"):
         flash("File not found.", "danger")
         return redirect(url_for("dashboard"))
-    path = intern_file_path(record)
-    if path:
-        path.unlink(missing_ok=True)
+    storage_service.delete("intern_files", record.get("stored_name"))
     task["intern_files"] = [item for item in files if item.get("id") != file_id]
     save_json(TASKS_FILE, tasks)
     flash(f"{record.get('filename', 'File')} deleted successfully.", "success")
@@ -2083,7 +2127,8 @@ def collect_and_submit_files(task_id):
     submitted = 0
     for row in related:
         for record in row.get("intern_files", []) or []:
-            if record.get("intern_id") not in allowed_ids or not intern_file_path(record):
+            if record.get("intern_id") not in allowed_ids or not storage_service.exists(
+                    "intern_files", record.get("stored_name")):
                 continue
             if not record.get("sent_to_admin"):
                 record["sent_to_admin"] = True
@@ -2125,8 +2170,13 @@ def mentor_upload_to_admin(task_id):
     intern_id = intern_ids[0] if intern_ids else None
     intern = next((item for item in interns if item.get("id") == intern_id), {})
     saved = []
+    rejected = None
     for storage in uploads:
-        uploaded = save_upload(storage, INTERN_FILES_DIR, f"{parent.get('id', 'task')}_mentor")
+        try:
+            uploaded = save_upload(storage, "intern_files", f"{parent.get('id', 'task')}_mentor")
+        except storage_service.FileNotAllowedError as exc:
+            rejected = str(exc)
+            continue
         if not uploaded:
             continue
         uploaded.update({
@@ -2144,7 +2194,10 @@ def mentor_upload_to_admin(task_id):
         parent.setdefault("intern_files", []).append(uploaded)
         saved.append(uploaded)
     if not saved:
-        flash("No valid files were selected.", "warning")
+        if rejected:
+            flash(rejected, "danger")
+        else:
+            flash("No valid files were selected.", "warning")
         return redirect(url_for("view_task", task_id=parent.get("id")))
     save_json(TASKS_FILE, tasks)
     notify_users(admin_user_ids(), parent, user.get("username", "Mentor"), f"Uploaded {len(saved)} file(s) individually to Admin")
@@ -2180,13 +2233,17 @@ def upload_final_project(task_id):
     if not parent:
         flash("The parent admin task could not be found.", "danger")
         return redirect(url_for("mentor_dashboard"))
-    uploaded = save_upload(request.files.get("final_project_file"), PROJECT_UPLOAD_DIR, f"final_{parent.get('id', 'project')}")
-    if not uploaded:
+    rejected = None
+    try:
+        uploaded = save_upload(request.files.get("final_project_file"), "projects", f"final_{parent.get('id', 'project')}")
+    except storage_service.FileNotAllowedError as exc:
+        # The Storage policy raises the exact message this upload always showed.
+        uploaded = None
+        rejected = str(exc)
+    if rejected:
+        flash(rejected, "danger")
+    elif not uploaded:
         flash("Choose the combined final ZIP file.", "danger")
-    elif not uploaded["filename"].lower().endswith(".zip"):
-        path = PROJECT_UPLOAD_DIR / uploaded["stored_name"]
-        path.unlink(missing_ok=True)
-        flash("Only .zip project files are accepted.", "danger")
     else:
         parent["final_project_file"] = uploaded
         parent["final_project_submitted_by"] = user.get("username", "Mentor")
@@ -2227,12 +2284,11 @@ def download_project(task_id):
     if not allowed:
         flash("You do not have permission to download this project.", "danger")
         return redirect(url_for("home"))
-    path = project_path(file_record)
-    if not path:
+    response = stored_file_response("projects", file_record, as_attachment=True)
+    if response is None:
         flash("No project file is available for your role yet.", "warning")
         return redirect(request.referrer or url_for("home"))
-    display_name = file_record.get("filename", path.name) if file_record else path.name
-    return send_file(path, as_attachment=True, download_name=display_name)
+    return response
 
 
 if __name__ == "__main__":

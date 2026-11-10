@@ -5,3 +5,16 @@ __pycache__/
 .env
 .vscode/
 uploads/
+
+# Firebase emulator debug logs (local development only)
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+storage-debug.log
+database-debug.log
+
+# Local service-account keys (NEVER commit credentials)
+secrets/
+serviceAccountKey.json
+*serviceAccount*.json
+firebase-adminsdk*.json

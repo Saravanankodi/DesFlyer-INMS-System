@@ -1,0 +1,118 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // =====================================================================
+    // INMS - Firebase Storage security rules  (FIREBASE_SETUP.md, section 14)
+    //
+    // HOW THESE RULES ARE USED
+    //   * Uploads/downloads go through the Flask server, which uses the
+    //     Firebase Admin SDK and BYPASSES these rules. app.py validates the
+    //     file type and size again (storage_service.py) and checks role +
+    //     ownership for every download and delete - that is the primary gate.
+    //   * These rules are the second line of defence: the bucket is PRIVATE
+    //     (no allUsers access anywhere), every request must come from a
+    //     signed-in user with an allowed role, and write requests are checked
+    //     against the exact same type/size policy the server enforces.
+    //
+    // OBJECT OWNERSHIP
+    //   Objects are stored under the folder of the record they belong to:
+    //     documents/<intern|mentor document>   - created by admin
+    //     projects/<final project zip>         - created by mentor
+    //     intern_files/<task submission>       - created by intern/mentor
+    //   Which user may reach which object is decided per record in app.py
+    //   (interns only reach their own submissions, mentors only their own
+    //   tasks, admins reach everything they are entitled to).
+    // =====================================================================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function claimRole() {
+      return request.auth.token.role;
+    }
+    function isAdmin() {
+      return signedIn() && claimRole() == 'admin';
+    }
+    function isMentor() {
+      return signedIn() && claimRole() == 'mentor';
+    }
+    function isStaff() {
+      return signedIn() && claimRole() in ['admin', 'mentor', 'intern'];
+    }
+
+    // ---- shared type/size policy (mirrors storage_service.py) -----------
+    function isDocument() {
+      return request.resource.contentType in [
+        'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+        'image/bmp', 'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.oasis.opendocument.text', 'text/plain'
+      ] && request.resource.size <= 20 * 1024 * 1024;
+    }
+    function isProjectZip() {
+      return request.resource.contentType in ['application/zip', 'application/x-zip-compressed']
+        && request.resource.size <= 500 * 1024 * 1024;
+    }
+    function isSubmission() {
+      return request.resource.contentType in [
+        // archives
+        'application/zip', 'application/x-zip-compressed', 'application/x-7z-compressed',
+        'application/vnd.rar', 'application/gzip', 'application/x-tar',
+        // documents / text
+        'application/pdf', 'text/plain', 'text/csv', 'text/tsv', 'text/markdown',
+        'text/html', 'text/xml', 'text/css', 'application/json', 'application/xml',
+        'application/javascript', 'application/x-python-code', 'application/x-ipynb+json',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        // images
+        'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp',
+        // design / media
+        'image/vnd.adobe.photoshop', 'application/postscript',
+        'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska',
+        'audio/mpeg', 'audio/wav'
+      ] && request.resource.size <= 500 * 1024 * 1024;
+    }
+
+    // ------------------------- intern/mentor documents --------------------
+    match /documents/{objectName} {
+      // Private bucket: only signed-in staff may download; the server decides
+      // per record who is allowed to see a given document.
+      allow read: if isStaff();
+      // Uploaded by the admin when an intern/mentor profile is created or edited.
+      allow create, update: if isAdmin() && isDocument();
+      // The application has no "delete document" action; admin-only as the
+      // most privileged role (still never open to everyone).
+      allow delete: if isAdmin();
+    }
+
+    // --------------------------- final project zips -----------------------
+    match /projects/{objectName} {
+      allow read: if isStaff();
+      // The mentor submits the combined final ZIP; only .zip up to 500 MB.
+      allow create, update: if isMentor() && isProjectZip();
+      // No deletion flow exists for final projects - deny all deletions.
+      allow delete: if false;
+    }
+
+    // ------------------------ intern task submissions ---------------------
+    match /intern_files/{objectName} {
+      allow read: if isStaff();
+      // Interns upload work to their mentor; mentors upload to the admin.
+      allow create, update: if isStaff() && isSubmission();
+      // Deletion is restricted to mentors and admins (interns cannot remove
+      // submissions once sent).
+      allow delete: if isAdmin() || isMentor();
+    }
+
+    // Anything outside the three known folders is denied outright.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

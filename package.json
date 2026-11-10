@@ -1,0 +1,28 @@
+{
+  "name": "desflyer-inms-system",
+  "version": "1.0.0",
+  "description": "A web-based **Internship Management and Task Tracking System** developed using **Python Flask**. The system helps organizations manage interns, mentors, tasks, projects, progress, notifications, and reports through role-based dashboards.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "android:debug": "cd android && gradlew.bat assembleDebug",
+    "android:release": "cd android && gradlew.bat assembleRelease"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saravanankodi/DesFlyer-INMS-System.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Saravanankodi/DesFlyer-INMS-System/issues"
+  },
+  "homepage": "https://github.com/Saravanankodi/DesFlyer-INMS-System#readme",
+  "dependencies": {
+    "@capacitor/

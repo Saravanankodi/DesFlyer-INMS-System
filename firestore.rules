@@ -1,0 +1,282 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =====================================================================
+    // INMS - Internship Management System
+    // Firestore security rules  (FIREBASE_SETUP.md, section 13)
+    //
+    // HOW THESE RULES ARE USED
+    //   * The Flask backend talks to Firestore with the Firebase Admin SDK,
+    //     which BYPASSES security rules. Every permission check therefore
+    //     runs first in app.py (role gates, ownership, task assignment,
+    //     form validation) - that is the primary access control layer.
+    //   * These rules are the second line of defence: they deny every
+    //     unauthenticated request and confine any client-side SDK to the
+    //     caller's own records with strict field-level validation.
+    //   * There is intentionally NO `allow read, write: if true` anywhere.
+    //   * Credentials (passwords) are never stored in Firestore - the rules
+    //     actively reject any document that contains a `password` field.
+    //
+    // ROLES come from custom claims set by the server when accounts are
+    // created/edited (firebase_auth_service.py):
+    //   request.auth.token.role       -> 'admin' | 'mentor' | 'intern'
+    //   request.auth.token.profileId  -> mentor id (DFM001) / intern id (DFIN001)
+    //   request.auth.token.accountId  -> users document id (notification recipient)
+    // =====================================================================
+
+    // ----------------------------- helpers ------------------------------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function claimRole() {
+      return request.auth.token.role;
+    }
+    function claimProfile() {
+      return request.auth.token.profileId;
+    }
+    function claimAccount() {
+      return request.auth.token.accountId;
+    }
+    function isAdmin() {
+      return signedIn() && claimRole() == 'admin';
+    }
+    function isMentor() {
+      return signedIn() && claimRole() == 'mentor';
+    }
+    function isIntern() {
+      return signedIn() && claimRole() == 'intern';
+    }
+    function validRoles() {
+      return ['admin', 'mentor', 'intern'];
+    }
+    function taskStatuses() {
+      return ['Start', 'In Progress', 'Completed', 'Not Completed'];
+    }
+    function taskPriorities() {
+      return ['High', 'Medium', 'Low'];
+    }
+    function taskTypes() {
+      return ['Individual Work', 'Team Work'];
+    }
+    function noPassword(data) {
+      return !('password' in data);
+    }
+    function validId(value) {
+      return value is string && value.size() > 0 && value.size() <= 64;
+    }
+    function validEmail(value) {
+      return value is string && value.size() > 0 && value.size() <= 254 && value.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+    function validDate(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+    function hasOnlyKeys(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function isAssignedIntern(task) {
+      return (('assigned_intern_ids' in task) && task.assigned_intern_ids is list
+              && task.assigned_intern_ids.hasAny([claimProfile()]))
+        || (('intern_id' in task) && task.intern_id == claimProfile());
+    }
+
+    // =============================== users ===============================
+    // Login accounts (no password material - authentication lives in
+    // Firebase Authentication).
+    match /users/{userId} {
+      // Read: admins see every account; a user may read their own record.
+      allow read: if isAdmin()
+        || (signedIn()
+            && (resource.data.id == claimAccount() || resource.data.uid == request.auth.uid));
+
+      // Create: admin only. Required fields, valid role, and the profile
+      // link required by the selected role.
+      allow create: if isAdmin()
+        && validId(request.resource.data.id)
+        && request.resource.data.username is string && request.resource.data.username.size() > 0
+        && validEmail(request.resource.data.email)
+        && request.resource.data.role in validRoles()
+        && noPassword(request.resource.data)
+        && (!('uid' in request.resource.data) || request.resource.data.uid is string)
+        && (request.resource.data.role != 'mentor'
+            || ('mentor_id' in request.resource.data && validId(request.resource.data.mentor_id)))
+        && (request.resource.data.role != 'intern'
+            || ('intern_id' in request.resource.data && validId(request.resource.data.intern_id)));
+
+      // Update: admin only. The document id and credentials stay protected.
+      allow update: if isAdmin()
+        && validId(request.resource.data.id)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.username is string && request.resource.data.username.size() > 0
+        && validEmail(request.resource.data.email)
+        && request.resource.data.role in validRoles()
+        && noPassword(request.resource.data)
+        && hasOnlyKeys(['username', 'email', 'role', 'mentor_id', 'intern_id', 'uid',
+                        'seq', 'createdAt', 'updatedAt']);
+
+      // Delete: admin only (app.py additionally blocks self-deletion).
+      allow delete: if isAdmin();
+    }
+
+    // =============================== interns =============================
+    match /interns/{internId} {
+      // Read: admins; the mentor the intern belongs to; the intern (own profile).
+      allow read: if isAdmin()
+        || (isMentor() && resource.data.assigned_mentor == claimProfile())
+        || (isIntern() && resource.data.id == claimProfile());
+
+      // Create: admin only, with the same required fields the form enforces.
+      allow create: if isAdmin()
+        && validId(request.resource.data.id)
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && validEmail(request.resource.data.email)
+        && request.resource.data.phone is string
+        && request.resource.data.department is string && request.resource.data.department.size() > 0
+        && validDate(request.resource.data.joining_date)
+        && request.resource.data.duration_months is int
+        && request.resource.data.duration_months > 0
+        && request.resource.data.employment_status in ['Active Intern', 'Past Employee']
+        && noPassword(request.resource.data);
+
+      // Update: admin only (mentor/intern profiles are read-only for others).
+      allow update: if isAdmin()
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && validEmail(request.resource.data.email)
+        && request.resource.data.department is string && request.resource.data.department.size() > 0
+        && validDate(request.resource.data.joining_date)
+        && request.resource.data.duration_months is int
+        && request.resource.data.duration_months > 0
+        && noPassword(request.resource.data);
+
+      // Delete: admin only.
+      allow delete: if isAdmin();
+    }
+
+    // =============================== mentors =============================
+    match /mentors/{mentorId} {
+      // Read: admins, or the mentor reading their own profile.
+      allow read: if isAdmin() || (isMentor() && resource.data.id == claimProfile());
+
+      // Create: admin only, at least one department required.
+      allow create: if isAdmin()
+        && validId(request.resource.data.id)
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && validEmail(request.resource.data.email)
+        && request.resource.data.phone is string && request.resource.data.phone.size() > 0
+        && request.resource.data.departments is list
+        && request.resource.data.departments.size() > 0
+        && noPassword(request.resource.data);
+
+      // Update: admin only; the mentor id stays immutable.
+      allow update: if isAdmin()
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && validEmail(request.resource.data.email)
+        && request.resource.data.departments is list
+        && request.resource.data.departments.size() > 0
+        && noPassword(request.resource.data);
+
+      // Delete: admin only (app.py blocks deleting mentors who still have interns).
+      allow delete: if isAdmin();
+    }
+
+    // ================================ tasks ==============================
+    match /tasks/{taskId} {
+      function validTaskFields(task) {
+        return task.title is string && task.title.size() > 0
+          && task.department is string && task.department.size() > 0
+          && task.priority in taskPriorities()
+          && task.status in taskStatuses()
+          && task.task_type in taskTypes()
+          && validDate(task.start_date)
+          && validDate(task.deadline)
+          && task.assigned_intern_ids is list
+          && task.assigned_intern_ids.size() > 0
+          && task.created_by_role in ['admin', 'mentor']
+          && (('parent_task_id' in task) == (task.created_by_role == 'mentor'));
+      }
+
+      // Read: admins; the mentor the task is assigned to; assigned interns.
+      allow read: if isAdmin()
+        || (isMentor() && 'assigned_mentor' in resource.data
+            && resource.data.assigned_mentor == claimProfile())
+        || (isIntern() && isAssignedIntern(resource.data));
+
+      // Create: admins create projects/tasks; mentors only create subtasks
+      // beneath an admin project within their own assignment.
+      allow create: if validTaskFields(request.resource.data)
+        && noPassword(request.resource.data)
+        && ((isAdmin()
+             && request.resource.data.created_by_role == 'admin'
+             && ('parent_task_id' in request.resource.data)
+             && request.resource.data.parent_task_id == null)
+            || (isMentor()
+                && request.resource.data.created_by_role == 'mentor'
+                && request.resource.data.parent_task_id is string
+                && request.resource.data.assigned_mentor == claimProfile()));
+
+      // Update: admins may edit anything; mentors only their own subtasks and
+      // never the parent link or creator; interns may only push their own
+      // status through the pending-confirmation workflow.
+      allow update: if noPassword(request.resource.data)
+        && request.resource.data.id == resource.data.id
+        && ( (isAdmin()
+              && validTaskFields(request.resource.data))
+          || (isMentor()
+              && resource.data.created_by_role == 'mentor'
+              && resource.data.assigned_mentor == claimProfile()
+              && request.resource.data.parent_task_id == resource.data.parent_task_id
+              && request.resource.data.created_by_role == resource.data.created_by_role
+              && request.resource.data.status in taskStatuses()
+              && request.resource.data.intern_status in taskStatuses()
+              && request.resource.data.mentor_status in taskStatuses()
+              && hasOnlyKeys(['title', 'description', 'start_date', 'deadline', 'priority',
+                              'status', 'intern_status', 'mentor_status',
+                              'mentor_pending_status', 'mentor_pending', 'department',
+                              'task_type', 'intern_id', 'assigned_intern_ids',
+                              'assigned_names', 'assigned_mentor', 'completed_at',
+                              'intern_project_file', 'intern_files', 'seq',
+                              'createdAt', 'updatedAt']))
+          || (isIntern()
+              && isAssignedIntern(resource.data)
+              && request.resource.data.intern_status in taskStatuses()
+              && request.resource.data.mentor_pending == true
+              && hasOnlyKeys(['intern_status', 'mentor_pending_status', 'mentor_pending',
+                              'updatedAt']))
+          );
+
+      // Delete: admins delete any task; mentors only their own subtasks.
+      // Interns cannot delete tasks.
+      allow delete: if isAdmin()
+        || (isMentor()
+            && resource.data.created_by_role == 'mentor'
+            && resource.data.assigned_mentor == claimProfile()
+            && resource.data.parent_task_id is string);
+    }
+
+    // =========================== notifications ===========================
+    match /notifications/{notificationId} {
+      // Read: only the recipient of the notification.
+      allow read: if signedIn() && resource.data.recipient_id == claimAccount();
+
+      // Create: system-generated by the Flask server (Admin SDK only).
+      allow create: if false;
+
+      // Update: the recipient may flip the read flag only.
+      allow update: if signedIn()
+        && resource.data.recipient_id == claimAccount()
+        && request.resource.data.recipient_id == resource.data.recipient_id
+        && request.resource.data.read is bool
+        && hasOnlyKeys(['read', 'updatedAt']);
+
+      // Delete: the recipient may remove their own notification (mark as read
+      // removes the document); admins may clean up any notification.
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.recipient_id == claimAccount());
+    }
+
+    // Any document that does not match a block above is DENIED by default.
+  }
+}

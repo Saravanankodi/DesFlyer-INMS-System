@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DesFlyer-INMS</string>
+    <string name="title_activity_main">DesFlyer-INMS</string>
+    <string name="package_name">com.desflyer.inms</string>
+    <string name="custom_url_scheme">com.desflyer.inms</string>
+</resources>

@@ -55,10 +55,24 @@ _DIAGNOSTIC_ENV_VARS = (
 )
 
 
+def _describe_env(name: str) -> str:
+    """Report whether a setting is present, and its length for the long key.
+
+    The length is the quickest way to confirm that a 3000-character service
+    account key arrived complete instead of truncated.
+    """
+    value = os.environ.get(name)
+    if not value:
+        return "MISSING"
+    if name == "FIREBASE_CREDENTIALS":
+        return f"set ({len(value.strip())} characters)"
+    return "set"
+
+
 def _firebase_diagnostic_page() -> str:
     rows = "".join(
         "<tr><td style='padding:4px 14px 4px 0'>{}</td><td style='padding:4px 0'>{}</td></tr>".format(
-            name, "set" if os.environ.get(name) else "MISSING"
+            name, _describe_env(name)
         )
         for name in _DIAGNOSTIC_ENV_VARS
     )

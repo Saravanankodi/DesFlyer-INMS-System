@@ -19,6 +19,9 @@ serviceAccountKey.json
 *serviceAccount*.json
 firebase-adminsdk*.json
 
+# Generated for pasting the service-account key into Vercel
+vercel-credentials-base64.txt
+
 # ---------------------------------------------------------------------------
 # Capacitor / Android
 # ---------------------------------------------------------------------------

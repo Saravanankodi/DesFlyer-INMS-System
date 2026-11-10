@@ -211,6 +211,13 @@ def _parse_credentials_payload(raw: str) -> dict:
     if payload.startswith("data:") and "," in payload:
         payload = payload.split(",", 1)[1]
 
+    if payload.lower().endswith(".json") or payload.lower().startswith(("secrets", "./", ".\\")):
+        raise ValueError(
+            f"value is {len(payload)} characters and looks like a file path "
+            f"({payload!r}), not a key. On Vercel a file cannot be read: paste the "
+            "base64-encoded contents of the JSON key instead of its path."
+        )
+
     # 1. Plain JSON, optionally with escaped newlines (private_key "\n").
     for candidate in (payload, payload.replace("\\n", "\n")):
         try:

@@ -111,6 +111,26 @@ git push origin main
 
 ## 5. Verify
 
+### 5.1 Health endpoint (fastest)
+
+Open <https://desflyer-inms-system.vercel.app/api/health>
+
+```json
+{
+  "status": "ok",
+  "checks": { "credentials": "ok", "firestore": "ok (...)", "auth": "ok" },
+  "env": { "FIREBASE_PROJECT_ID": true, "FIREBASE_CREDENTIALS": true, ... },
+  "project": "desflyer-inms",
+  "mode": "production"
+}
+```
+
+- `"status": "error"` + `"reason": "Missing environment variable(s): ..."` → add those in Vercel and redeploy.
+- `"checks": { "firestore": "failed: ..." }` → network/credentials problem; the detail names it.
+- The endpoint never returns secret values, only `true`/`false` per variable.
+
+### 5.2 Login
+
 1. Open <https://desflyer-inms-system.vercel.app/login>
 2. Role **Admin**, e-mail `saravanankodi5@gmail.com`, password `SK@DesFlyer`.
 3. You should reach `/admin/dashboard`.

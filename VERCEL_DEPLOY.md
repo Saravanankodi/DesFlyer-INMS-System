@@ -69,20 +69,42 @@ use preview deployments):
 
 ### The service account value
 
-Vercel cannot read a file, so the key is passed **inline as base64**. In
-PowerShell, from the project folder:
+Vercel cannot read a file, so the key is passed **inline as base64**. A JSON key
+contains newlines, which environment variables handle badly, hence base64.
+
+Run the helper — it encodes the key, verifies the round-trip, copies the value to
+the clipboard and writes it to `vercel-credentials-base64.txt`:
 
 ```powershell
 cd C:\Users\user\OneDrive\Desktop\INMS\DesFlyer-INMS-System
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("secrets\firebase-service-account.json")) | Set-Clipboard
+python prepare_vercel_env.py
 ```
 
-The base64 string is now on your clipboard. Paste it as the value of
-`FIREBASE_CREDENTIALS` in Vercel.
+It prints the exact length the value must have:
 
-> `firebase_config.py` accepts the key in three forms: inline JSON, base64 JSON
-> (what we use here), or a file path. Base64 is used because it survives
-> environment-variable handling unchanged.
+```
+FIREBASE_CREDENTIALS must be exactly 3172 characters.
+Clipboard          : copied
+```
+
+Paste that into `FIREBASE_CREDENTIALS`. If the clipboard does not work, open
+`vercel-credentials-base64.txt`, press **Ctrl+A**, **Ctrl+C**, then paste.
+
+> **`FIREBASE_CREDENTIALS` must be the key itself — not the path to it.**
+> Pasting `secrets/firebase-service-account.json` (37 characters) is the most
+> common mistake. The site reports it precisely:
+>
+> ```
+> Details: value is 37 characters and looks like a file path
+> ('secrets/firebase-service-account.json'), not a key.
+> ```
+>
+> `firebase_config.py` accepts the key as plain JSON, base64, unpadded base64,
+> base64url, with or without surrounding quotes/whitespace, and with a
+> `data:...;base64,` prefix — so small copy/paste damage is tolerated.
+
+> `FIREBASE_CREDENTIALS_FILE` must **not** be set on Vercel: there is no file to
+> read there. Leave it unset (it only exists in the local `.env`).
 
 ### Get the Flask secret
 
@@ -169,7 +191,9 @@ deployment-ready, and `FIREBASE_CREDENTIALS` works the same way.
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `Unterminated string in JSON` | Truncated `package.json` | Fixed in `6254b58`; verify the raw file on GitHub ends with `}` |
-| `FUNCTION_INVOCATION_FAILED` / 500 | Missing env var | Section 3 |
+| `FUNCTION_INVOCATION_FAILED` / 500 | Missing env var, or the app crashed before it could answer | Now replaced by a **diagnostic page** that names the cause (section 5.1) |
+| Diagnostic page: `value is 37 characters and looks like a file path` | The key's **path** was pasted instead of the key | Run `python prepare_vercel_env.py`, paste the 3172-character value |
+| Diagnostic page: `Incorrect padding` | base64 was truncated or had characters removed | Re-paste the full value from `vercel-credentials-base64.txt` |
 | 500 only after redeploy | Env var added to the wrong environment | Add to **Production**, then redeploy |
 | Login says "Invalid login details" | Firestore `users` link missing | Already provisioned (account `7405533183`, role `admin`) |
 | `413 Request Entity Too Large` | Upload > 4.5 MB | Use a container host (section 6) |

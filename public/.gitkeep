@@ -1,0 +1,1 @@
+# Intentionally empty: Vercel serves only this folder statically; every request is rewritten to the Flask function.

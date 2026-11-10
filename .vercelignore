@@ -1,0 +1,40 @@
+# Files that must NOT be uploaded to Vercel.
+#
+# Keeping package.json out of the deployment prevents Vercel from treating this
+# as a Node project (it is a Python/Flask app; package.json only exists for the
+# Capacitor Android shell).
+.git
+.github
+.vscode
+.idea
+
+# Capacitor / Android shell (not part of the web deployment)
+android
+node_modules
+out
+capacitor.config.ts
+package.json
+package-lock.json
+
+# Local-only material
+secrets
+.env
+.env.*
+tests
+__pycache__
+*.pyc
+*.log
+*.db
+*.keystore
+*.jks
+
+# Legacy local data files (Firestore is the real database)
+interns.json
+mentors.json
+tasks.json
+users.json
+notifications.json
+
+# Documentation and editor noise
+*.md
+.gitignore

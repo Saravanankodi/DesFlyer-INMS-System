@@ -2,6 +2,7 @@ import calendar
 import mimetypes
 import os
 import re
+import sys
 import zipfile
 from io import BytesIO
 from datetime import date, datetime
@@ -23,16 +24,74 @@ from data_store import load_json, save_json
 from firebase_auth_service import AccountAlreadyExistsError, AccountNotProvisionedError, AuthUnavailableError
 from firebase_config import FirebaseConfigError, init_firebase
 
-# This application is Firebase-only: it refuses to start when Firebase is not
-# configured, instead of silently running without a real backend.
+# This application is Firebase-only: it never serves real pages when Firebase is
+# not configured, instead of silently running without a real backend.
+#
+# The reason is remembered rather than raising SystemExit at import time.  On a
+# serverless host (Vercel) an import-time exit surfaces as an opaque
+# "FUNCTION_INVOCATION_FAILED" 500 with no explanation; keeping the error lets
+# every request answer with a diagnostic page that names the missing setting.
+FIREBASE_STARTUP_ERROR: str | None = None
 try:
     init_firebase()
 except FirebaseConfigError as exc:
-    raise SystemExit(f"\n[INMS] Firebase configuration error:\n{exc}\n")
+    FIREBASE_STARTUP_ERROR = str(exc).strip()
+    print(f"\n[INMS] Firebase configuration error:\n{FIREBASE_STARTUP_ERROR}\n", file=sys.stderr)
 
 app = Flask(__name__)
 # Session signing key. Set FLASK_SECRET_KEY in .env for production deployments.
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "internship-tracker-development-key-change-me")
+
+# Settings reported by the diagnostic page (presence only - never the value).
+_DIAGNOSTIC_ENV_VARS = (
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_STORAGE_BUCKET",
+    "FIREBASE_WEB_API_KEY",
+    "FIREBASE_CREDENTIALS",
+    "FIREBASE_CREDENTIALS_FILE",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    "FLASK_SECRET_KEY",
+    "FIREBASE_USE_EMULATORS",
+)
+
+
+def _firebase_diagnostic_page() -> str:
+    rows = "".join(
+        "<tr><td style='padding:4px 14px 4px 0'>{}</td><td style='padding:4px 0'>{}</td></tr>".format(
+            name, "set" if os.environ.get(name) else "MISSING"
+        )
+        for name in _DIAGNOSTIC_ENV_VARS
+    )
+    detail = escape(FIREBASE_STARTUP_ERROR or "")
+    return (
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+        "<title>INMS - backend not configured</title></head>"
+        "<body style=\"font-family:system-ui,-apple-system,'Segoe UI',sans-serif;"
+        "max-width:760px;margin:48px auto;padding:0 20px;line-height:1.55\">"
+        "<h1 style='font-size:20px;margin:0 0 10px'>Backend not configured</h1>"
+        "<p style='margin:0 0 16px'>The application is running, but it cannot reach "
+        "Firebase, so no page is served.</p>"
+        "<pre style='white-space:pre-wrap;background:#f5f5f5;padding:12px;"
+        "border-radius:6px;font-size:13px'>" + detail + "</pre>"
+        "<h2 style='font-size:15px;margin:26px 0 8px'>Environment variables</h2>"
+        "<table style='border-collapse:collapse;font-size:14px'>" + rows + "</table>"
+        "<p style='margin-top:26px;font-size:13px;color:#555'>Add the missing values in "
+        "Vercel &rarr; Settings &rarr; Environment Variables (Production), then redeploy. "
+        "Secret values are never shown on this page.</p>"
+        "</body></html>"
+    )
+
+
+@app.before_request
+def _block_requests_until_firebase_is_ready():
+    if FIREBASE_STARTUP_ERROR is None:
+        return None
+    return (
+        _firebase_diagnostic_page(),
+        503,
+        {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"},
+    )
+
 
 BASE_DIR = Path(__file__).resolve().parent
 # NOTE: these legacy JSON filenames are only used as stable KEYS for the

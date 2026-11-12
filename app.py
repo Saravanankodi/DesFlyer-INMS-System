@@ -49,19 +49,21 @@ _DIAGNOSTIC_ENV_VARS = (
     "FIREBASE_WEB_API_KEY",
     "FIREBASE_CREDENTIALS",
     "FIREBASE_CREDENTIALS_FILE",
-    "GOOGLE_APPLICATION_CREDENTIALS",
     "FLASK_SECRET_KEY",
     "FIREBASE_USE_EMULATORS",
 )
 
 
 def _describe_env(name: str) -> str:
-    """Report whether a setting is present, and its length for the long key.
+    """Report whether a setting is present, plus its length or its role.
 
-    The length is the quickest way to confirm that a 3000-character service
-    account key arrived complete instead of truncated.
+    The length of FIREBASE_CREDENTIALS is the quickest way to confirm that a
+    3000-character service account key arrived complete instead of truncated.
     """
     value = os.environ.get(name)
+    if name == "FIREBASE_CREDENTIALS_FILE":
+        # A local convenience only: serverless hosts have no key file to read.
+        return "set (local file)" if value else "not needed on Vercel"
     if not value:
         return "MISSING"
     if name == "FIREBASE_CREDENTIALS":

@@ -20,6 +20,8 @@ package-lock.json
 secrets
 .env
 .env.*
+vercel.env
+vercel-credentials-base64.txt
 tests
 __pycache__
 *.pyc

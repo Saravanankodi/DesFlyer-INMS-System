@@ -109,6 +109,43 @@ def _block_requests_until_firebase_is_ready():
     )
 
 
+@app.errorhandler(404)
+def _not_found(_error):
+    """404 page that shows which path the WSGI layer actually delivered.
+
+    A hosted rewrite can hand Flask a different path than the browser asked
+    for; printing it is the fastest way to see that.
+    """
+    env = request.environ
+    lines = [
+        "Not Found",
+        "",
+        f"request.path      = {request.path!r}",
+        f"PATH_INFO         = {env.get('PATH_INFO')!r}",
+        f"SCRIPT_NAME       = {env.get('SCRIPT_NAME')!r}",
+        f"REQUEST_URI       = {env.get('REQUEST_URI') or env.get('RAW_URI')!r}",
+        f"QUERY_STRING      = {env.get('QUERY_STRING')!r}",
+        f"HTTP_X_VERCEL_ID  = {env.get('HTTP_X_VERCEL_ID')!r}",
+        f"registered rules  = {len(list(app.url_map.iter_rules()))}",
+        f"first rule        = {next(iter(app.url_map.iter_rules()), None)!r}",
+        "",
+        "If request.path is not the URL you asked for, the rewrite in",
+        "vercel.json is handing the function its destination path.",
+    ]
+    return (
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+        "<title>404 - INMS</title></head>"
+        "<body style=\"font-family:system-ui,-apple-system,'Segoe UI',sans-serif;"
+        "max-width:760px;margin:40px auto;padding:0 20px;line-height:1.55\">"
+        "<pre style='white-space:pre-wrap;background:#f5f5f5;padding:14px;"
+        "border-radius:6px;font-size:13px'>"
+        + escape("\n".join(lines))
+        + "</pre></body></html>",
+        404,
+        {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"},
+    )
+
+
 BASE_DIR = Path(__file__).resolve().parent
 # NOTE: these legacy JSON filenames are only used as stable KEYS for the
 # Firestore collections (see data_store.COLLECTION_BY_FILE). The application

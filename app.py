@@ -117,6 +117,11 @@ def _not_found(_error):
     for; printing it is the fastest way to see that.
     """
     env = request.environ
+    redacted = {
+        key: ("<redacted>" if re.search(r"cookie|auth|secret|token|key", key, re.I) else value)
+        for key, value in sorted(env.items())
+        if isinstance(value, str)
+    }
     lines = [
         "Not Found",
         "",
@@ -127,10 +132,9 @@ def _not_found(_error):
         f"QUERY_STRING      = {env.get('QUERY_STRING')!r}",
         f"HTTP_X_VERCEL_ID  = {env.get('HTTP_X_VERCEL_ID')!r}",
         f"registered rules  = {len(list(app.url_map.iter_rules()))}",
-        f"first rule        = {next(iter(app.url_map.iter_rules()), None)!r}",
         "",
-        "If request.path is not the URL you asked for, the rewrite in",
-        "vercel.json is handing the function its destination path.",
+        "--- WSGI environ (secret-looking values redacted) ---",
+        *[f"{key} = {value!r}" for key, value in redacted.items()],
     ]
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"

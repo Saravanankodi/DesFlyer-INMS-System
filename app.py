@@ -8,6 +8,7 @@ from io import BytesIO
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 from uuid import uuid4
 from xml.sax.saxutils import escape
 
@@ -41,6 +42,73 @@ except FirebaseConfigError as exc:
 app = Flask(__name__)
 # Session signing key. Set FLASK_SECRET_KEY in .env for production deployments.
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "internship-tracker-development-key-change-me")
+
+
+# --- Original request path recovery -----------------------------------------
+# vercel.json rewrites every request onto /api/index so that this one
+# serverless function serves the whole site.  The runtime then hands WSGI
+# PATH_INFO = "/api/index", which would make Flask 404 every real page.  The
+# rewrite also carries the browser's path in the __path query parameter, so it
+# is written back into PATH_INFO before Flask matches the URL.
+_ORIGINAL_PATH_HEADERS = (
+    "HTTP_X_ORIGINAL_URL",
+    "HTTP_X_REWRITE_URL",
+    "HTTP_X_FORWARDED_PATH",
+    "HTTP_X_PATH",
+)
+
+
+def _looks_like_a_path(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and value.startswith("/")
+        and "$" not in value
+        and value != "/api/index"
+        and " " not in value
+    )
+
+
+def restore_original_path(environ: dict) -> None:
+    """Point PATH_INFO at the path the browser actually requested."""
+    for header in _ORIGINAL_PATH_HEADERS:
+        candidate = str(environ.get(header) or "").split("?")[0]
+        if _looks_like_a_path(candidate):
+            environ["PATH_INFO"] = candidate
+            return
+
+    query = str(environ.get("QUERY_STRING") or "")
+    if "__path=" not in query:
+        return
+
+    kept = []
+    captured = None
+    for part in query.split("&"):
+        name, _, value = part.partition("=")
+        if name == "__path":
+            captured = unquote(value)
+        elif part:
+            kept.append(part)
+
+    if captured and "?" in captured:
+        # The capture may carry a query string of its own (/interns?q=1).
+        captured, _, own_query = captured.partition("?")
+        if own_query:
+            kept.append(own_query)
+
+    environ["QUERY_STRING"] = "&".join(kept)
+    if _looks_like_a_path(captured):
+        environ["PATH_INFO"] = captured
+
+
+_original_wsgi_app = app.wsgi_app
+
+
+def _path_aware_wsgi_app(environ, start_response):
+    restore_original_path(environ)
+    return _original_wsgi_app(environ, start_response)
+
+
+app.wsgi_app = _path_aware_wsgi_app
 
 # Settings reported by the diagnostic page (presence only - never the value).
 _DIAGNOSTIC_ENV_VARS = (

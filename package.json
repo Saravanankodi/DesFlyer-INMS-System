@@ -7,6 +7,7 @@
     "test": "tests"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-capacitor-agp.js",
     "cap:sync": "cap sync android",
     "cap:open": "cap open android",
     "android:debug": "cd android && gradlew.bat assembleDebug",

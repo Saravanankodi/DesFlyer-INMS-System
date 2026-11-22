@@ -7,7 +7,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
+        // Pinned to 8.8.2: the installed Android Studio (Ladybug, build 242)
+        // supports up to AGP 8.8.2 and refuses to sync a newer plugin.
+        classpath 'com.android.tools.build:gradle:8.8.2'
         classpath 'com.google.gms:google-services:4.4.4'
 
         // NOTE: Do not place your application dependencies here; they belong

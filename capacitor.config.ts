@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   //     npx cap sync android
   // ---------------------------------------------------------------------
   server: {
-    // url: "https://inms.desflyer.com",
+    url: "https://inms.desflyer.com",
     androidScheme: "https",
     cleartext: false,
     allowNavigation: [

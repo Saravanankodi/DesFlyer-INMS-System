@@ -24,6 +24,21 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Kotlin 1.8 merged kotlin-stdlib-jdk7/jdk8 into kotlin-stdlib. A stale
+    // kotlin-stdlib-jdk7:1.6.21 / kotlin-stdlib-jdk8:1.6.21 (pulled in by
+    // kotlinx-coroutines 1.6.4 from Cordova) next to kotlin-stdlib:1.8.22 puts
+    // the same classes on the classpath twice and fails
+    // :checkDebugAndroidTestDuplicateClasses. Pin every stdlib artifact to one
+    // version so there is exactly one copy of those classes.
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin'
+                    && details.requested.name.startsWith('kotlin-stdlib')) {
+                details.useVersion '1.8.22'
+            }
+        }
+    }
 }
 
 task clean(type: Delete) {
